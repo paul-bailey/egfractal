@@ -16,6 +16,7 @@ AC_PROG_CC_STDC
 # I don't really meand to install this, but...
 AC_PROG_INSTALL
 AM_PROG_CC_C_O
+AC_SEARCH_LIBS([sqrt], [m])
 
 AC_CHECK_HEADERS([unistd.h stdio.h stdlib.h string.h stdint.h \
                   ctype.h errno.h assert.h math.h], , \
