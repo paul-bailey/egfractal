@@ -15,7 +15,7 @@ rm -f test-driver
 rm -f build/ltmain.sh
 rm -f build/test-driver
 
-for dir in . lib mandelbrot
+for dir in . lib mandelbrot random
 do
     rm -f ${dir}/*.in
     rm -f ${dir}/Makefile
