@@ -9,10 +9,6 @@
  * @g: Integer array to convolve with @f
  * @fsize: Array length (NOT bit length!) of @f
  * @gsize: Array lenght (NOT bit length!) of @g
- *
- * Return an array of length @fsize plus @gsize that is the convolution
- * of @f and @g, not normalized.  This should be freed with free() when
- * you are finished with it.
  */
 void
 convolve(unsigned int *dest, const unsigned int *f,
