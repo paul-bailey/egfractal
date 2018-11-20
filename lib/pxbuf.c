@@ -1,13 +1,22 @@
+/*
+ * pxbuf.c - Library to handle array with combined RGB
+ * Compare with pxrgb.c.
+ */
 #include "fractal_common.h"
 #include <string.h>
 #include <stdlib.h>
+
+enum {
+        /* This is all we support - boring old 24-bit RGB. */
+        RGB_NCHAN = 3,
+        PXBUF_BPS = 8 * RGB_NCHAN,
+};
 
 struct pxbuf_t {
         unsigned int heightpx;
         unsigned int widthpx;
         unsigned int depth;
-        unsigned int bps;
-        unsigned int bytewidth; /* Saved widthpx * depth */
+        unsigned int bytewidth; /* Saved widthpx * RGB_NCHAN */
         unsigned long bufsize;
         unsigned char *buf;
 };
@@ -23,7 +32,7 @@ static unsigned char *
 pxbuf_colptr_safe(Pxbuf *pxbuf, unsigned int row, unsigned int col)
 {
         unsigned int idx = (pxbuf->heightpx - row) * pxbuf->bytewidth
-                           + pxbuf->depth * col;
+                           + RGB_NCHAN * col;
         return &pxbuf->buf[idx];
 }
 
@@ -131,10 +140,6 @@ pxbuf_fill_pixel(Pxbuf *pxbuf, unsigned int row,
  * @row: Row to filter
  * @filter: Array of filter
  * @filterlen: Length of filter
- *
- * Note:
- * If the filter results in out-of-bounds RGB values, then the row will
- * be normalized ONLY FOR THE COLOR THAT WAS OUT OF BOUNDS.
  */
 void
 pxbuf_filter_row(Pxbuf *pxbuf, int row,
@@ -142,7 +147,8 @@ pxbuf_filter_row(Pxbuf *pxbuf, int row,
 {
         unsigned char *rowptr;
         unsigned int *tbuf, *tcolor;
-        int off;
+        unsigned int *colorp[RGB_NCHAN];
+        int rgbchan;
 
         if (row >= pxbuf->heightpx)
                 return;
@@ -151,21 +157,37 @@ pxbuf_filter_row(Pxbuf *pxbuf, int row,
         if (!tbuf)
                 goto e_tbuf;
 
-        tcolor = malloc(pxbuf->widthpx * sizeof(*tcolor));
+        tcolor = malloc(pxbuf->widthpx * 3 * sizeof(*tcolor));
         if (!tcolor)
                 goto e_tcolor;
 
+        colorp[0] = tcolor;
+        colorp[1] = &tcolor[pxbuf->widthpx * sizeof(*tcolor)];
+        colorp[2] = &tcolor[pxbuf->widthpx * 2 * sizeof(*tcolor)];
+
         rowptr = pxbuf_rowptr_safe(pxbuf, row);
-        for (off = 0; off < pxbuf->depth; off++) {
+        /* XXX REVISIT: Cross-over definition of RGB_NCHAN and RGB_NCHAN */
+        for (rgbchan = 0; rgbchan < RGB_NCHAN; rgbchan++) {
                 int i;
                 for (i = 0; i < pxbuf->widthpx; i++)
-                        tcolor[i] = rowptr[i * pxbuf->depth + off];
+                        colorp[rgbchan][i] = rowptr[i * RGB_NCHAN + rgbchan];
 
-                convolve(tbuf, tcolor, filter, pxbuf->widthpx, filterlen);
-                normalize(tbuf, pxbuf->widthpx + filterlen, true);
+                convolve(tbuf, colorp[rgbchan], filter, pxbuf->widthpx, filterlen);
+                memcpy(colorp[rgbchan], tbuf, pxbuf->widthpx * sizeof(*tcolor));
+        }
+
+        /*
+         * Normalize all three channels together,
+         * or else they will not be scaled in proportion with
+         * each other.
+         */
+        normalize(tcolor, pxbuf->widthpx * RGB_NCHAN, true);
+
+        for (rgbchan = 0; rgbchan < RGB_NCHAN; rgbchan++) {
+                int i;
                 /* XXX REVISIT: Do I want to adjust for phase lag? */
                 for (i = 0; i < pxbuf->widthpx; i++)
-                        rowptr[i * pxbuf->depth + off] = tbuf[i];
+                        rowptr[i * RGB_NCHAN + rgbchan] = colorp[rgbchan][i];
         }
         free(tcolor);
         free(tbuf);
@@ -179,24 +201,20 @@ e_tbuf:
 }
 
 /**
- * pxbuf_filter_row - Filter a row of a bitmap
+ * pxbuf_filter_column - Filter a column of a bitmap
  * @pxbuf: Bitmap
- * @row: Row to filter
+ * @col: Column to filter
  * @filter: Array of filter
  * @filterlen: Length of filter
- *
- * FIXME:
- * If the filter results in out-of-bounds RGB values, then the
- * column will be normalized ONLY FOR THE COLOR THAT WAS OUT OF
- * BOUNDS. All three arrays should be normalized instead!
  */
 void
 pxbuf_filter_column(Pxbuf *pxbuf, int col,
                     const unsigned int *filter, int filterlen)
 {
         unsigned int *tbuf, *tcolor;
-        unsigned int off;
+        unsigned int rgbchan;
         unsigned char *start;
+        unsigned int *colorp[RGB_NCHAN];
 
         if (col >= pxbuf->widthpx)
                 return;
@@ -209,23 +227,35 @@ pxbuf_filter_column(Pxbuf *pxbuf, int col,
         if (!tcolor)
                 goto e_tcolor;
 
-        start = &pxbuf->buf[pxbuf->depth * col];
-        for (off = 0; off < pxbuf->depth; off++, start++) {
-                int row;
-                unsigned char *p;
+        colorp[0] = tcolor;
+        colorp[1] = &tcolor[pxbuf->widthpx * sizeof(*tcolor)];
+        colorp[2] = &tcolor[pxbuf->widthpx * 2 * sizeof(*tcolor)];
 
-                p = start;
+        start = &pxbuf->buf[RGB_NCHAN * col];
+        for (rgbchan = 0; rgbchan < RGB_NCHAN; rgbchan++, start++) {
+                int row;
+                unsigned char *p = start;
                 for (row = 0; row < pxbuf->heightpx; row++) {
-                        tcolor[row] = *p;
+                        colorp[rgbchan][row] = *p;
                         p += pxbuf->bytewidth;
                 }
+                convolve(tbuf, colorp[rgbchan], filter, pxbuf->heightpx, filterlen);
+                memcpy(colorp[rgbchan], tbuf, pxbuf->heightpx * sizeof(*tcolor));
+        }
 
-                convolve(tbuf, tcolor, filter, pxbuf->heightpx, filterlen);
-                normalize(tbuf, pxbuf->heightpx + filterlen, true);
+        /*
+         * Normalize all three channels together,
+         * or else they will not be scaled in proportion with
+         * each other.
+         */
+        normalize(tcolor, pxbuf->heightpx * RGB_NCHAN, true);
 
-                p = start;
+        start = &pxbuf->buf[RGB_NCHAN * col];
+        for (rgbchan = 0; rgbchan < RGB_NCHAN; rgbchan++, start++) {
+                int row;
+                unsigned char *p = start;
                 for (row = 0; row < pxbuf->heightpx; row++) {
-                        *p = tbuf[row];
+                        *p = colorp[rgbchan][row];
                         p += pxbuf->bytewidth;
                 }
         }
@@ -254,9 +284,7 @@ pxbuf_create(int width, int height, unsigned int color)
 
         ret->heightpx = height;
         ret->widthpx = width;
-        ret->bps = 24;
-        ret->depth = ret->bps / 8;
-        ret->bytewidth = ret->widthpx * ret->depth;
+        ret->bytewidth = ret->widthpx * RGB_NCHAN;
         ret->bufsize = ret->bytewidth * ret->heightpx;
         ret->buf = malloc(ret->bufsize);
         if (!ret->buf)
@@ -293,3 +321,10 @@ pxbuf_free(Pxbuf *pxbuf)
         free(pxbuf->buf);
         free(pxbuf);
 }
+
+void
+pxbuf_print(Pxbuf *pxbuf, FILE *fp)
+{
+        bmp_print(fp, pxbuf->buf, pxbuf->widthpx, pxbuf->heightpx, PXBUF_BPS);
+}
+
