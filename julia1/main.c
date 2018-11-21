@@ -314,7 +314,7 @@ main(int argc, char **argv)
 	FILE *fp;
 	char *endptr;
 	int opt;
-	while ((opt = getopt(argc, argv, "dz:x:y:w:h:n:R:I:")) != -1) {
+	while ((opt = getopt(argc, argv, "dz:x:y:w:h:n:R:I:p:")) != -1) {
 		switch (opt) {
 		case 'd':
 			gbl.dither = true;
@@ -349,6 +349,11 @@ main(int argc, char **argv)
 			if (endptr == optarg)
 				usage();
 			break;
+                case 'p':
+                        gbl.pallette = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                usage();
+                        break;
                 case 'R': /* Real part of c */
                         gbl.cx = strtod(optarg, &endptr);
                         if (endptr == optarg)

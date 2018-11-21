@@ -22,8 +22,6 @@ static struct gbl_t {
 	double zoom_pct;
 	double zoom_xoffs;
 	double zoom_yoffs;
-        double cx;
-        double cy;
 } gbl = {
 	.pxbuf = NULL,
 	.n_iteration = 1000,
@@ -34,8 +32,6 @@ static struct gbl_t {
 	.zoom_pct = 1.0,
 	.zoom_xoffs = 0.0,
 	.zoom_yoffs = 0.0,
-        .cx = -0.70176,
-        .cy = -0.3842,
 };
 
 
@@ -212,7 +208,7 @@ get_color(double idx)
 
 
 static double
-julia_px(int row, int col)
+playpen_px(int row, int col)
 {
 	double x, y, zx, zy, ret;
 	int i;
@@ -224,9 +220,11 @@ julia_px(int row, int col)
 		double xtmp;
 		if ((zx * zx + zy * zy) >= 4.0)
 			break;
-		xtmp = zx * zx - zy * zy;
-                zy = 2.0 * zx * zy + gbl.cy;
-                zx = xtmp + gbl.cx;
+
+                /* z^3! */
+                xtmp = zx*zx*zx - 2*zx*zy*zy - zx*zy*zy;
+                zy = zx*zy + 2*zx*zx*zy - zy*zy*zy;
+                zx = xtmp;
 	}
 
 	/* TODO: Dither here */
@@ -265,7 +263,7 @@ oom(void)
 }
 
 static void
-julia(void)
+playpen(void)
 {
 	int row, col;
 	unsigned long total;
@@ -283,7 +281,7 @@ julia(void)
 	ptbuf = tbuf;
 	for (row = 0; row < gbl.height; row++) {
 		for (col = 0; col < gbl.width; col++) {
-			double i = julia_px(row, col);
+			double i = playpen_px(row, col);
 			histogram[(int)i]++;
 			total += (int)i;
 			*ptbuf++ = i;
@@ -349,25 +347,11 @@ main(int argc, char **argv)
 			if (endptr == optarg)
 				usage();
 			break;
-                case 'R': /* Real part of c */
-                        gbl.cx = strtod(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        if (endptr[0] == 'p' && endptr[1] == 'i')
-                                gbl.cx *= pi;
-                        break;
-                case 'I': /* Imaginary part of c */
-                        gbl.cy = strtod(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        if (endptr[0] == 'p' && endptr[1] == 'i')
-                                gbl.cy *= pi;
-                        break;
 		default:
 			usage();
 		}
 	}
-	fp = fopen("julia1.bmp", "wb");
+	fp = fopen("playpen1.bmp", "wb");
 	if (!fp) {
 		fprintf(stderr, "Cannot open output file\n");
 		return 1;
@@ -379,7 +363,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	julia();
+	playpen();
 	pxbuf_print(gbl.pxbuf, fp);
 	fclose(fp);
 	pxbuf_free(gbl.pxbuf);

@@ -96,7 +96,7 @@ linear_interp(unsigned int color1, unsigned int color2, double frac)
 }
 
 enum { FILT_SIZE = 20, };
-static void 
+static void
 convolve_helper(unsigned int *filt, unsigned int *buf)
 {
 	unsigned int tbuf[NCOLOR + FILT_SIZE];
@@ -141,7 +141,7 @@ initialize_pallette(void)
 			filt[i] = 1;
 		for (i = 1; i < FILT_SIZE; i+= 2)
 			filt[i] = 2;
-		for (i = 1; i < 30; i++) 
+		for (i = 1; i < 30; i++)
 			blue[i] = red[i] = green[i] = 12;
 		for (i = 30; i < 40; i++) {
 			blue[i] = 255;
@@ -151,7 +151,7 @@ initialize_pallette(void)
 			blue[i] = 255;
 			red[i] = 55;
 		}
-		for (i = 50; i < 65; i++) 
+		for (i = 50; i < 65; i++)
 			green[i] = red[i] = 255;
 		for (i = 65; i < 80; i++)
 			red[i] = 255;
@@ -167,7 +167,7 @@ initialize_pallette(void)
 		normalize(green);
 		for (i = 0; i < NCOLOR; i++)
 			pallette[i] = TO_RGB(red[i], green[i], blue[i]);
-		
+
 		break;
 	case 2:
 		inside_color = COLOR_WHITE;
@@ -259,7 +259,7 @@ oom(void)
 	exit(EXIT_FAILURE);
 }
 
-static void 
+static void
 burnship(void)
 {
 	int row, col;
@@ -267,14 +267,14 @@ burnship(void)
 	unsigned long *histogram;
 	double *ptbuf, *tbuf;
 	histogram = malloc(gbl.n_iteration * sizeof(*histogram));
-	if (!histogram) 
+	if (!histogram)
 		oom();
 	tbuf = malloc(gbl.width * gbl.height * sizeof(*tbuf));
 	if (!tbuf)
 		oom();
 	memset(histogram, 0, gbl.n_iteration * sizeof(*histogram));
 	total = 0;
-	
+
 	ptbuf = tbuf;
 	for (row = 0; row < gbl.height; row++) {
 		for (col = 0; col < gbl.width; col++) {
@@ -353,7 +353,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Cannot open output file\n");
 		return 1;
 	}
-	
+
 	gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
 	if (!gbl.pxbuf) {
 		fprintf(stderr, "OOM!\n");
