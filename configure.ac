@@ -30,7 +30,6 @@ AC_C_INLINE
 
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
-                 random/Makefile
                  examples/Makefile
                  burnship1/Makefile
                  mandelbrot/Makefile])
