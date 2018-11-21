@@ -32,6 +32,7 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  examples/Makefile
                  burnship1/Makefile
+                 julia1/Makefile
                  mandelbrot/Makefile])
 
 AC_OUTPUT
