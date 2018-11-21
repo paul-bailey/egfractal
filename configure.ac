@@ -31,6 +31,7 @@ AC_C_INLINE
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  random/Makefile
+                 examples/Makefile
                  mandelbrot/Makefile])
 
 AC_OUTPUT

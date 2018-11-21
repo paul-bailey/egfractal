@@ -5,6 +5,7 @@
 #include "fractal_common.h"
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 enum {
         /* This is all we support - boring old 24-bit RGB. */
@@ -21,18 +22,26 @@ struct pxbuf_t {
         unsigned char *buf;
 };
 
+/* Because rows are backwards in .bmp files */
+static inline unsigned int
+true_row(Pxbuf *pxbuf, unsigned int row)
+{
+        return pxbuf->heightpx - row - 1;
+}
+
 /* Fast version of pxbuf_*ptr() - Don't check boundaries */
 static unsigned char *
 pxbuf_rowptr_safe(Pxbuf *pxbuf, unsigned int row)
 {
-        return &pxbuf->buf[(pxbuf->heightpx - row) * pxbuf->bytewidth];
+        return &pxbuf->buf[true_row(pxbuf, row) * pxbuf->bytewidth];
 }
 
 static unsigned char *
 pxbuf_colptr_safe(Pxbuf *pxbuf, unsigned int row, unsigned int col)
 {
-        unsigned int idx = (pxbuf->heightpx - row) * pxbuf->bytewidth
+        unsigned int idx = true_row(pxbuf, row) * pxbuf->bytewidth
                            + RGB_NCHAN * col;
+        assert(idx < pxbuf->bufsize);
         return &pxbuf->buf[idx];
 }
 
@@ -59,7 +68,8 @@ pxbuf_fill_pixel_safe(unsigned char *pixel, unsigned int color)
 static void
 normalize(unsigned int *array, size_t alen, bool safety_only)
 {
-        int i, max = 0;
+        int i;
+        unsigned int max = 0;
         for (i = 0; i < alen; i++) {
                 if (max < array[i])
                         max = array[i];
@@ -157,13 +167,13 @@ pxbuf_filter_row(Pxbuf *pxbuf, int row,
         if (!tbuf)
                 goto e_tbuf;
 
-        tcolor = malloc(pxbuf->widthpx * 3 * sizeof(*tcolor));
+        tcolor = malloc(pxbuf->widthpx * RGB_NCHAN * sizeof(*tcolor));
         if (!tcolor)
                 goto e_tcolor;
 
         colorp[0] = tcolor;
-        colorp[1] = &tcolor[pxbuf->widthpx * sizeof(*tcolor)];
-        colorp[2] = &tcolor[pxbuf->widthpx * 2 * sizeof(*tcolor)];
+        colorp[1] = &tcolor[pxbuf->widthpx];
+        colorp[2] = &tcolor[pxbuf->widthpx * 2];
 
         rowptr = pxbuf_rowptr_safe(pxbuf, row);
         /* XXX REVISIT: Cross-over definition of RGB_NCHAN and RGB_NCHAN */
@@ -173,7 +183,7 @@ pxbuf_filter_row(Pxbuf *pxbuf, int row,
                         colorp[rgbchan][i] = rowptr[i * RGB_NCHAN + rgbchan];
 
                 convolve(tbuf, colorp[rgbchan], filter, pxbuf->widthpx, filterlen);
-                memcpy(colorp[rgbchan], tbuf, pxbuf->widthpx * sizeof(*tcolor));
+                memcpy(colorp[rgbchan], &tbuf[filterlen/2], pxbuf->widthpx * sizeof(*tcolor));
         }
 
         /*
@@ -223,13 +233,13 @@ pxbuf_filter_column(Pxbuf *pxbuf, int col,
         if (!tbuf)
                 goto e_tbuf;
 
-        tcolor = malloc(pxbuf->heightpx * sizeof(*tcolor));
+        tcolor = malloc(pxbuf->heightpx * sizeof(*tcolor) * RGB_NCHAN);
         if (!tcolor)
                 goto e_tcolor;
 
         colorp[0] = tcolor;
-        colorp[1] = &tcolor[pxbuf->widthpx * sizeof(*tcolor)];
-        colorp[2] = &tcolor[pxbuf->widthpx * 2 * sizeof(*tcolor)];
+        colorp[1] = &tcolor[pxbuf->heightpx];
+        colorp[2] = &tcolor[pxbuf->heightpx * 2];
 
         start = &pxbuf->buf[RGB_NCHAN * col];
         for (rgbchan = 0; rgbchan < RGB_NCHAN; rgbchan++, start++) {
@@ -240,7 +250,8 @@ pxbuf_filter_column(Pxbuf *pxbuf, int col,
                         p += pxbuf->bytewidth;
                 }
                 convolve(tbuf, colorp[rgbchan], filter, pxbuf->heightpx, filterlen);
-                memcpy(colorp[rgbchan], tbuf, pxbuf->heightpx * sizeof(*tcolor));
+                memcpy(colorp[rgbchan], &tbuf[filterlen/2],
+                       pxbuf->heightpx * sizeof(*tcolor));
         }
 
         /*
