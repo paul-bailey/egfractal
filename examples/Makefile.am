@@ -3,7 +3,7 @@ bin_PROGRAMS = \
     dots \
     random \
     playpen \
-    mbrot2
+    mbrot2 
 LDADD = $(top_srcdir)/lib/libfractal.a
 dots_SOURCES = dots.c
 random_SOURCES = random.c
