@@ -2,7 +2,7 @@ bin_PROGRAMS = \
   mandelbrot
 LDADD = $(top_srcdir)/lib/libfractal.a
 mandelbrot_SOURCES = \
-		     main2.c
+		     main.c
 #   pallette.c \
 #   mandelbrot.c \
 #   mandelbrot.h \
