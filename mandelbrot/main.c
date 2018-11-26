@@ -9,6 +9,7 @@
 
 enum {
 	NCOLOR = 128,
+	TRACK_PROGRESS = 1,
 };
 
 static struct gbl_t {
@@ -38,10 +39,12 @@ static struct gbl_t {
 	.bailout = 2.0,
 	.bailoutsqu = 4.0,
 	.min_iteration = 0,
+	.distance_est = false,
 };
 
 /* Initialized to log2l(2.0L) */
 static long double log_2;
+static const long double INSIDE = -1.0L;
 
 /* scale pixels to points of mandelbrot set and handle zoom. */
 static void
@@ -103,11 +106,6 @@ linear_interp(unsigned int color1, unsigned int color2, long double frac)
 	r1 = interp_helper(r1, r2, frac);
 	g1 = interp_helper(g1, g2, frac);
 	b1 = interp_helper(b1, b2, frac);
-#warning remove
-	if (r1>=256||g1>=256||b1>=256) {
-		printf("r1=%d,g1=%d,b1=%d,frac=%Lg\n",
-				r1, g1, b1, frac);
-	}
 	assert(r1 < 256);
 	assert(g1 < 256);
 	assert(b1 < 256);
@@ -230,7 +228,8 @@ initialize_pallette(void)
 	case 3:
 		inside_color = COLOR_BLACK;
 		for (i = 0; i < NCOLOR; i++) {
-			double phi = (double)i * 6.283185307 / (double)NCOLOR;
+			static const long double PHY_SCALAR = 6.283185307 / (double)NCOLOR; 
+			double phi = (double)i * PHY_SCALAR;
 			red[i] = (int)(abs(sin(phi)) * 255.0);
 			blue[i] = (int)(abs(cos(phi)) * 0.8 * 256.0);
 			green[i] = i < NCOLOR/2 
@@ -270,20 +269,22 @@ get_color(long double idx, long double min, long double max)
 	int i;
 	unsigned int v1, v2;
 
-	if (!(idx >= 0.0L)) {
-		printf("%Lg not in range of [%Lg, %Lg]\n", idx, min, max);
-	}
-	assert(idx >= 0.0L || gbl.distance_est);
-
 	if (inside_color == NO_COLOR) {
 		/* Need to initialize pallette */
 		initialize_pallette();
+		if (gbl.distance_est)
+			inside_color = COLOR_BLACK;
 	}
+	
+	if (idx <= 0.0L)
+		return inside_color;
 
 	if (gbl.distance_est) {
-		if (idx <= 0.0L)
-			return inside_color;
-		idx = idx * (long double)gbl.n_iteration / max;
+		/* Black and white */
+		unsigned int magn = (unsigned int)(255.0 * pow(idx / max, 0.25));
+		if (magn > 255)
+			magn = 255;
+		return TO_RGB(magn, magn, magn);
 	}
 
 	if ((int)idx >= gbl.n_iteration)
@@ -341,11 +342,16 @@ iterate_normal(long double x0, long double y0)
 	for (i = 0; i < n; i++) {
 		long double xnew = x * x - y * y + x0;
 		long double ynew = 2.0L * x * y + y0;
-		if ((xnew * xnew + ynew * ynew) > gbl.bailoutsqu)
+		if (xnew == x && ynew == y)
+			return INSIDE;
+		if ((xnew * xnew + ynew * ynew) > gbl.bailoutsqu) 
 			break;
 		x = xnew;
 		y = ynew;
 	}
+
+	if (i == n)
+		return INSIDE;
 
 	ret = (long double)i;
 	if (i < n && gbl.dither > 0) {
@@ -382,44 +388,95 @@ iterate_normal(long double x0, long double y0)
 	return ret;
 }
 
+typedef struct complex_t {
+	long double re;
+	long double im;
+} complex_t;
+
+static complex_t
+complex_mul(complex_t a, complex_t b)
+{
+	complex_t ret;
+	ret.re = a.re * b.re - a.im * b.im;
+	ret.im = a.im * b.re + a.re * b.im;
+	return ret;
+}
+
+static long double
+complex_modsqu(complex_t v)
+{
+	return v.re * v.re + v.im * v.im;
+}
+
+static long double
+complex_mod(complex_t v)
+{
+	return sqrt(complex_modsqu(v));
+}
+
+static complex_t
+complex_sq(complex_t v)
+{
+	complex_t ret;
+	ret.re = v.re * v.re - v.im * v.im;
+	ret.im = 2.0L * v.im * v.re;
+	return ret;
+}
+
+static complex_t
+complex_add(complex_t a, complex_t b)
+{
+	complex_t ret;
+	ret.re = a.re + b.re;
+	ret.im = a.im + b.im;
+	return ret;
+}
+
 static long double
 iterate_distance(long double x0, long double y0)
 {
 	/* Accept defeat until I get this method working. */
-	if (true)
+	if (false)
 		return iterate_normal(x0, y0);
 
 	unsigned long n = gbl.n_iteration;
 	unsigned long i;
 	if (false) {
-		long double complex c = x0 + I * y0;
-		long double complex z = 0.0L + I * 0.0L;
-		long double complex dz = 0.0L + I * 0.0L;
+		complex_t c = { .re = x0, .im = y0 };
+		complex_t z = { .re = 0.0L, .im = 0.0L };
+		complex_t dz = { .re = 0.0L, .im = 0.0L };
 		long double m2;
 
 		for (i = 0; i < n; i++) {
-			dz = 2.0L * z * dz + 1.0L;
-			z = z * z + c;
-			if ((m2 = cabsl(z) * cabsl(z)) > gbl.bailoutsqu)
+			dz = complex_mul(z, dz);
+			dz.re *= 2.0L;
+			dz.re += 1.0L;
+			dz.im *= 2.0L;
+			z = complex_add(complex_sq(z), c);
+			if ((m2 = complex_modsqu(z)) > gbl.bailoutsqu)
 				break;
 		}
-		return sqrtl(m2 / modulusqu(dz)) * 0.5L * logl(m2);
+		return sqrtl(m2 / complex_modsqu(dz)) * 0.5L * logl(m2);
 	} else {
-		long double complex c, z, znew, dz, dznew;
-		c = x0 + I * y0;
-		z = 0.0L + I * 0.0L;
-		dz = 1.0L + I * 0.0L;
+		complex_t c = { .re = x0, .im = y0 };
+		complex_t z = { .re = 0.0L, .im = 0.0L };
+		complex_t dz = { .re = 1.0L, .im = 0.0L };
 		for (i = 0; i < n; i++) {
-			znew = z * z + c;
-			dznew = 2.0L * z * dz + 1.0L;
-			z = znew;
-			dz = dznew;
-			if (modulusqu(z) > gbl.bailoutsqu)
+			complex_t znew, dznew;
+			znew = complex_add(complex_sq(z), c);
+			dznew = complex_mul(z, dz);
+			dznew.re = dznew.re * 2.0L + 1.0L;
+			dznew.im = dznew.im * 2.0L;
+			z.re = znew.re;
+			z.im = znew.im;
+			dz.re = dznew.re;
+			dz.im = dznew.im;
+			if (complex_modsqu(z) > gbl.bailoutsqu)
 				break;
 		}
 
 		/* Return distance normalized to the colorspace */
-		return (modulus(z) * logl(modulus(z)) / modulus(dz)) * 255 / 4.0;
+		return (complex_mod(z) * logl(complex_mod(z)) / complex_mod(dz)) * 255 / 4.0;
 	}
 }
 
@@ -432,7 +489,7 @@ mandelbrot_px(int row, int col)
 
 	x0y0(&x0, &y0, row, col);
 #warning "put pack"
-	if (false && gbl.n_iteration > THRESHOLD) {
+	if (true && gbl.n_iteration > THRESHOLD) {
 		/* 
 		 * Faster to do this and throw away pixels that are in
 		 * the main cardioid and circle.
@@ -443,10 +500,10 @@ mandelbrot_px(int row, int col)
 		long double ysq = y0 * y0;
 		long double q = xp * xp + ysq;
 		if ((q * (q + xp)) < (0.25L * ysq))
-			return (long double)gbl.n_iteration;
+			return INSIDE;
 		xp = x0 + 1.0L;
 		if ((xp * xp + ysq) < (0.25L * ysq))
-			return (long double)gbl.n_iteration;
+			return INSIDE;
 	}
 
 	if (gbl.distance_est)
@@ -462,19 +519,27 @@ mandelbrot(void)
 	 * cardioid or largest circle.  That way we won't have the
 	 * additional check in the iterative algorithm.
 	 */
-	int row, col;
+	int row, col; 
 	long double *ptbuf, *tbuf, min, max;
 
 	tbuf = malloc(gbl.width * gbl.height * sizeof(*tbuf));
 	if (!tbuf)
 		oom();
 
+	if (TRACK_PROGRESS) {
+		printf("Row %9d col %9d", 0, 0);
+		fflush(stdout);
+	}
 	ptbuf = tbuf;
 	min = 1.0e16;
 	max = 0.0;
 	for (row = 0; row < gbl.height; row++) {
 		for (col = 0; col < gbl.width; col++) {
 			long double v;
+			if (TRACK_PROGRESS) {
+				printf("\e[23D%9d col %9d", row, col);
+				fflush(stdout);
+			}
 			v = mandelbrot_px(row, col);
 			if (min > v)
 				min = v;
@@ -482,7 +547,9 @@ mandelbrot(void)
 				max = v;
 			*ptbuf++ = v;
 		}
+
 	}
+	putchar('\n');
 	printf("min: %Lg max: %Lg\n", min, max);
 	ptbuf = tbuf;
 	for (row = 0; row < gbl.height; row++) {
