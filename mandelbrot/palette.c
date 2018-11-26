@@ -237,8 +237,8 @@ print_palette(void)
         if (inside_color == NO_COLOR)
                 initialize_pallette();
         for (row = 0; row < gbl.height; row++) {
-                for (col = 0; col < gbl.height; col++) {
-                        double idx = (double)col * (double)NCOLOR / (double)gbl.height;
+                for (col = 0; col < gbl.width; col++) {
+                        double idx = (double)col * (double)NCOLOR / (double)gbl.width;
                         unsigned int i, v1, v2, color;
                         i = (unsigned int)idx;
                         assert(i < NCOLOR);
