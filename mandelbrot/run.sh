@@ -25,8 +25,11 @@
 ./mandelbrot -b32768.0 -d1 -x-0.1550495 -y-0.65059865 -z5.0e-8 -p1 -w6000 -h6000 -o mandelbrot-1j.bmp
 ./mandelbrot -b32768.0 -d1 -x-0.1550495 -y-0.65059865 -z5.0e-8 -p3 -w6000 -h6000 -o mandelbrot-1k.bmp
 ./mandelbrot -b32768.0 -d1 -x-0.1550495 -y-0.65059865 -z5.0e-8 -p4 -w6000 -h6000 -o mandelbrot-1m.bmp
+
+# XXX: The following two used to be for legit locations, but sometime they got changed.
 ./mandelbrot -b32768.0 -d1 -x 0.7700000 -y 0.11000000 -z1.0e-3 -p1 -w6000 -h6000 -o mandelbrot-1n.bmp
 ./mandelbrot -b32768.0 -d1 -x 0.7699100 -y 0.10949000 -z1.0e-4 -p1 -w6000 -h6000 -o mandelbrot-1o.bmp
+
 ./mandelbrot -b32768.0 -d1 -p1 -z1.0e-6 -x1.2089925 -y0.2385097 -w6000 -h6000 -o mandelbrot-1p.bmp
 ./mandelbrot -D -z1.0e-5 -x-0.25200000 -y0.0001500 -b65536.0 -h6000 -w6000 -o mandelbrot-1q.bmp
 ./mandelbrot -D -z5.0e-6 -x-0.25205000 -y0.0001485 -b65536.0 -h6000 -w6000 -o mandelbrot-1r.bmp
