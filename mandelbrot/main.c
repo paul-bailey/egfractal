@@ -17,7 +17,7 @@ struct gbl_t gbl = {
 	.dither         = 0,
 	.height         = 600,
 	.width          = 600,
-	.pallette       = 2,
+	.palette       = 2,
 	.zoom_pct       = 1.0,
 	.zoom_xoffs     = 0.0,
 	.zoom_yoffs     = 0.0,
@@ -307,7 +307,7 @@ main(int argc, char **argv)
                         print_palette_only = true;
                         break;
 		case 'p':
-			gbl.pallette = strtoul(optarg, &endptr, 0);
+			gbl.palette = strtoul(optarg, &endptr, 0);
 			if (endptr == optarg)
 				usage();
 			break;

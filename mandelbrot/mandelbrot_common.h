@@ -11,7 +11,7 @@ extern struct gbl_t {
 	unsigned int dither;
 	unsigned int height;
 	unsigned int width;
-	unsigned int pallette;
+	unsigned int palette;
 	mfloat_t zoom_pct;
 	mfloat_t zoom_xoffs;
 	mfloat_t zoom_yoffs;

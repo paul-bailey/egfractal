@@ -9,7 +9,7 @@ enum {
 	NCOLOR = 128,
 };
 
-static unsigned int pallette[NCOLOR];
+static unsigned int palette[NCOLOR];
 #define NO_COLOR ((unsigned int)~0ul)
 static unsigned int inside_color = NO_COLOR;
 
@@ -81,7 +81,7 @@ normalize(unsigned int *buf)
 
 /* "transitionate" because I don't have a thesaurus handy */
 static void
-initialize_pallette(void)
+initialize_palette(void)
 {
 	int i;
 	static unsigned int filt[FILT_SIZE];
@@ -89,7 +89,7 @@ initialize_pallette(void)
 	static unsigned int green[NCOLOR];
 	static unsigned int blue[NCOLOR];
 
-	switch (gbl.pallette) {
+	switch (gbl.palette) {
 	default:
 	case 1:
 		inside_color = COLOR_BLACK;
@@ -122,7 +122,7 @@ initialize_pallette(void)
 		normalize(blue);
 		normalize(green);
 		for (i = 0; i < NCOLOR; i++)
-			pallette[i] = TO_RGB(red[i], green[i], blue[i]);
+			palette[i] = TO_RGB(red[i], green[i], blue[i]);
 
 		break;
 	case 2:
@@ -135,7 +135,7 @@ initialize_pallette(void)
                         if (rg > 255)
                                 rg = 255;
                         b = b * b / 256;
-			pallette[i] = TO_RGB(rg, rg, b);
+			palette[i] = TO_RGB(rg, rg, b);
 		}
 		break;
 	case 3:
@@ -148,7 +148,7 @@ initialize_pallette(void)
 			green[i] = i < NCOLOR/2
 				  ? (i * 256 / NCOLOR)
 				  : (i - NCOLOR) * 256 / NCOLOR;
-			pallette[i] = TO_RGB(red[i], green[i], blue[i]);
+			palette[i] = TO_RGB(red[i], green[i], blue[i]);
 		}
 		break;
 	case 4:
@@ -170,7 +170,7 @@ initialize_pallette(void)
 				blue[i] = 0;
 			else if (blue[i] > 255)
 				blue[i] = 255;
-			pallette[i] = TO_RGB(red[i], green[i], blue[i]);
+			palette[i] = TO_RGB(red[i], green[i], blue[i]);
 		}
 		break;
 	}
@@ -207,15 +207,15 @@ iteration_to_color(mfloat_t iter_count)
         unsigned int v1, v2;
 
         if (inside_color == NO_COLOR)
-        	initialize_pallette();
+        	initialize_palette();
 
         if (iter_count <= 0.0L || (int)iter_count >= gbl.n_iteration)
         	return inside_color;
 
-        /* Linear interpolation of pallette[esc_count % NCOLOR] */
+        /* Linear interpolation of palette[esc_count % NCOLOR] */
         i = (int)iter_count % NCOLOR;
-        v1 = pallette[i];
-        v2 = pallette[i == NCOLOR - 1 ? 0 : i + 1];
+        v1 = palette[i];
+        v2 = palette[i == NCOLOR - 1 ? 0 : i + 1];
         return linear_interp(v1, v2, modfl(iter_count, &iter_count));
 }
 
@@ -235,15 +235,15 @@ print_palette(void)
 {
         int row, col;
         if (inside_color == NO_COLOR)
-                initialize_pallette();
+                initialize_palette();
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         double idx = (double)col * (double)NCOLOR / (double)gbl.width;
                         unsigned int i, v1, v2, color;
                         i = (unsigned int)idx;
                         assert(i < NCOLOR);
-                        v1 = pallette[i];
-                        v2 = pallette[i == NCOLOR-1 ? 0 : i + 1];
+                        v1 = palette[i];
+                        v2 = palette[i == NCOLOR-1 ? 0 : i + 1];
                         color = linear_interp(v1, v2, modf(idx, &idx));
                         pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
                 }
