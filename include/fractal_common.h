@@ -1,4 +1,5 @@
 #ifndef FRACTAL_COMMON_H
+#define FRACTAL_COMMON_H
 
 #include <stdio.h>
 #include <stdbool.h>
