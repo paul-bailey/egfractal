@@ -146,7 +146,8 @@ main(int argc, char **argv)
 	FILE *fp;
 	char *endptr;
 	int opt;
-	while ((opt = getopt(argc, argv, "dz:x:y:w:h:n:R:I:p:")) != -1) {
+        const char *outfile = "julia1.bmp";
+	while ((opt = getopt(argc, argv, "dz:x:y:w:h:n:R:I:p:o:")) != -1) {
 		switch (opt) {
 		case 'd':
 			gbl.dither = true;
@@ -181,6 +182,9 @@ main(int argc, char **argv)
 			if (endptr == optarg)
 				usage();
 			break;
+                case 'o':
+                        outfile = optarg;
+                        break;
                 case 'p':
                         gbl.pallette = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
@@ -204,18 +208,17 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-	fp = fopen("julia1.bmp", "wb");
-	if (!fp) {
-		fprintf(stderr, "Cannot open output file\n");
-		return 1;
-	}
-
 	gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
 	if (!gbl.pxbuf) {
 		fprintf(stderr, "OOM!\n");
 		return 1;
 	}
 
+	fp = fopen(outfile, "wb");
+	if (!fp) {
+		fprintf(stderr, "Cannot open output file\n");
+		return 1;
+	}
 	julia();
 	pxbuf_print(gbl.pxbuf, fp);
 	fclose(fp);
