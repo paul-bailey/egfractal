@@ -8,7 +8,7 @@
 #include <string.h>
 
 enum {
-        TRACK_PROGRESS = 1,
+        TRACK_PROGRESS = 0,
 };
 
 struct gbl_t gbl = {
