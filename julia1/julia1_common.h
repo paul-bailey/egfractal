@@ -11,15 +11,15 @@ extern struct gbl_t {
         int height;
         int width;
         int pallette;
-        double zoom_pct;
-        double zoom_xoffs;
-        double zoom_yoffs;
-        double cx;
-        double cy;
+        mfloat_t zoom_pct;
+        mfloat_t zoom_xoffs;
+        mfloat_t zoom_yoffs;
+        mfloat_t cx;
+        mfloat_t cy;
 } gbl;
 
 /* palette.c */
-extern unsigned int get_color(double idx);
+extern unsigned int get_color(mfloat_t idx);
 
 #endif /* JULIA1_COMMON_H */
 

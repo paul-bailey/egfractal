@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 
-static const double pi = 3.14159265359;
+static const mfloat_t pi = 3.14159265359;
 
 struct gbl_t gbl = {
         .pxbuf = NULL,
@@ -54,10 +54,10 @@ xy_to_complex(int row, int col)
 
 #define INSIDE (-1.0L)
 
-static double
+static mfloat_t
 julia_px(int row, int col)
 {
-        double ret;
+        mfloat_t ret;
         unsigned long i;
         complex_t z;
         complex_t c = { .re = gbl.cx, .im = gbl.cy };
@@ -74,7 +74,7 @@ julia_px(int row, int col)
                 return INSIDE;
 
         /* TODO: Dither here */
-        ret = (double)i;
+        ret = (mfloat_t)i;
         if (i < gbl.n_iteration) {
                 if (gbl.dither) {
                         /* Smooth by dithering */
@@ -83,20 +83,20 @@ julia_px(int row, int col)
                                 v = -1 * (v & 0xff);
                         else
                                 v &= 0xff;
-                        double diff = (double)v / 128.0;
+                        mfloat_t diff = (mfloat_t)v / 128.0;
                         ret += diff;
                 }
 
                 /* TODO: Smooth by distance */
                 if (gbl.dither) {
-                        double log_zn = log10(complex_modulus2(z)) / 2.0;
-                        double log_2 = log10(2.0);
-                        double nu = log10(log_zn / log_2) / log_2;
+                        mfloat_t log_zn = log10(complex_modulus2(z)) / 2.0;
+                        mfloat_t log_2 = log10(2.0);
+                        mfloat_t nu = log10(log_zn / log_2) / log_2;
                         ret += 1.0 - nu;
                 }
 
-                if (ret >= (double)gbl.n_iteration)
-                        ret = (double)(gbl.n_iteration - 1);
+                if (ret >= (mfloat_t)gbl.n_iteration)
+                        ret = (mfloat_t)(gbl.n_iteration - 1);
                 else if (ret < 0.0)
                         ret = 0.0;
         }
@@ -109,7 +109,7 @@ julia(void)
         int row, col;
         unsigned long total;
         unsigned long *histogram;
-        double *ptbuf, *tbuf;
+        mfloat_t *ptbuf, *tbuf;
         histogram = malloc(gbl.n_iteration * sizeof(*histogram));
         if (!histogram)
                 oom();
@@ -122,7 +122,7 @@ julia(void)
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
-                        double i = julia_px(row, col);
+                        mfloat_t i = julia_px(row, col);
                         histogram[(int)i]++;
                         total += (int)i;
                         *ptbuf++ = i;
@@ -132,8 +132,8 @@ julia(void)
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         unsigned int color;
-                        double i = *ptbuf++;
-                        i += ((double)histogram[(int)i] / (double)total + 0.5);
+                        mfloat_t i = *ptbuf++;
+                        i += ((mfloat_t)histogram[(int)i] / (mfloat_t)total + 0.5);
                         color = get_color(i);
                         pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
                 }

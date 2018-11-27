@@ -11,9 +11,9 @@ static unsigned int pallette[NCOLOR];
 static unsigned int inside_color = NO_COLOR;
 
 static unsigned int
-interp_helper(unsigned int color1, unsigned int color2, double frac)
+interp_helper(unsigned int color1, unsigned int color2, mfloat_t frac)
 {
-        return color1 + (int)(frac * ((double)color2 - (double)color1) + 0.5);
+        return color1 + (int)(frac * ((mfloat_t)color2 - (mfloat_t)color1) + 0.5);
 }
 
 static void
@@ -25,7 +25,7 @@ channelize(unsigned int color, unsigned int *r, unsigned int *g, unsigned int *b
 }
 
 static unsigned int
-linear_interp(unsigned int color1, unsigned int color2, double frac)
+linear_interp(unsigned int color1, unsigned int color2, mfloat_t frac)
 {
         unsigned int r1, g1, b1;
         unsigned int r2, g2, b2;
@@ -54,16 +54,16 @@ normalize(unsigned int *buf)
 {
         int i;
         unsigned int max = 0;
-        double scalar;
+        mfloat_t scalar;
         for (i = 0; i < NCOLOR; i++)
                 if (buf[i] > max)
                         max = buf[i];
         if (max == 0)
                 return;
 
-        scalar = 256.0 / (double)max;
+        scalar = 256.0 / (mfloat_t)max;
         for (i = 0; i < NCOLOR; i++) {
-                buf[i] = (unsigned)((double)buf[i] * scalar + 0.5);
+                buf[i] = (unsigned)((mfloat_t)buf[i] * scalar + 0.5);
                 if (buf[i] >= 255)
                         buf[i] = 255;
         }
@@ -120,7 +120,7 @@ initialize_pallette(void)
                         /* slightly yellow */
                         unsigned int rg = i * 256 / NCOLOR;
                         unsigned int b = rg * 204 / 256;
-                        rg = (int)(sqrt((double)rg/256.0) * 256.0);
+                        rg = (int)(sqrt((mfloat_t)rg/256.0) * 256.0);
                         if (rg > 255)
                                 rg = 255;
                         b = b * b / 256;
@@ -131,10 +131,11 @@ initialize_pallette(void)
 }
 
 unsigned int
-get_color(double idx)
+get_color(mfloat_t idx)
 {
         int i;
         unsigned int v1, v2;
+        long double dummy = 0.0L;
 
         if (inside_color == NO_COLOR) {
                 /* Need to initialize pallette */
@@ -147,7 +148,7 @@ get_color(double idx)
         i = (int)idx % NCOLOR;
         v1 = pallette[i];
         v2 = pallette[i == NCOLOR - 1 ? 0 : i + 1];
-        return linear_interp(v1, v2, modf(idx, &idx));
+        return linear_interp(v1, v2, modfl(idx, &dummy));
 }
 
 
