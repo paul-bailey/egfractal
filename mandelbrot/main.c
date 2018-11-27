@@ -52,14 +52,8 @@ oom(void)
 
 
 /* **********************************************************************
- *                      Complex-number helpers
+ *                      The algorithm
  ***********************************************************************/
-
-/* because using c99 complex types are really slow for some reason. */
-typedef struct complex_t {
-        mfloat_t re;
-        mfloat_t im;
-} complex_t;
 
 /* scale pixels to points of mandelbrot set and handle zoom. */
 static complex_t
@@ -75,64 +69,6 @@ xy_to_complex(int row, int col)
         return c;
 }
 
-static complex_t
-complex_mul(complex_t a, complex_t b)
-{
-        complex_t ret;
-        ret.re = a.re * b.re - a.im * b.im;
-        ret.im = a.im * b.re + a.re * b.im;
-        return ret;
-}
-
-static mfloat_t
-complex_modsqu(complex_t v)
-{
-        return v.re * v.re + v.im * v.im;
-}
-
-static mfloat_t
-complex_mod(complex_t v)
-{
-        return sqrt(complex_modsqu(v));
-}
-
-static complex_t
-complex_sq(complex_t v)
-{
-        complex_t ret;
-        ret.re = v.re * v.re - v.im * v.im;
-        ret.im = 2.0L * v.im * v.re;
-        return ret;
-}
-
-static complex_t
-complex_add(complex_t a, complex_t b)
-{
-        a.re += b.re;
-        a.im += b.im;
-        return a;
-}
-
-static complex_t
-complex_addr(complex_t c, long double re)
-{
-        c.re += re;
-        return c;
-}
-
-static complex_t
-complex_mulr(complex_t c, long double re)
-{
-        c.re *= re;
-        c.im *= re;
-        return c;
-}
-
-
-/* **********************************************************************
- *                      The algorithm
- ***********************************************************************/
-
 static mfloat_t
 iterate_normal(complex_t c)
 {
@@ -147,10 +83,9 @@ iterate_normal(complex_t c)
                 /* Too precise for our data types. Assume inside. */
                 if (ztmp.re == z.re && ztmp.im == z.im)
                         return INSIDE;
-                if (complex_modsqu(ztmp) > gbl.bailoutsqu)
+                if (complex_modulus2(ztmp) > gbl.bailoutsqu)
                         break;
-                z.re = ztmp.re;
-                z.im = ztmp.im;
+                z = ztmp;
         }
 
         if (i == n)
@@ -161,7 +96,7 @@ iterate_normal(complex_t c)
         if (gbl.dither > 0) {
                 if (!!(gbl.dither & 01)) {
                         /* Smooth with distance estimate */
-                        mfloat_t log_zn = logl(complex_modsqu(z)) / 2.0L;
+                        mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0L;
                         mfloat_t nu = logl(log_zn / log_2) / log_2;
                         if (isfinite(log_zn) && isfinite(nu))
                                 ret += 1.0L - nu;
@@ -203,12 +138,12 @@ iterate_distance(complex_t c)
                 dz = complex_addr(dz, 1.0L);
                 z.re = ztmp.re;
                 z.im = ztmp.im;
-                if (complex_modsqu(z) > gbl.bailoutsqu)
+                if (complex_modulus2(z) > gbl.bailoutsqu)
                         break;
         }
 
         /* Return distance normalized to the colorspace */
-        return complex_mod(z) * logl(complex_mod(z)) / complex_mod(dz);
+        return complex_modulus(z) * logl(complex_modulus(z)) / complex_modulus(dz);
 }
 
 static mfloat_t

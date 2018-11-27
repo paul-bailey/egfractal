@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "complex_helpers.h"
+
 /* bmp_print.c */
 extern void bmp_print(FILE *fp, const unsigned char *array,
                       int width, int height, int depth);
