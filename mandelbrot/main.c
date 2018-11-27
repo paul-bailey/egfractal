@@ -67,8 +67,8 @@ xy_to_complex(int row, int col)
 {
         complex_t c;
 
-        c.re = 4.0 * (mfloat_t)col / (mfloat_t)gbl.width  - 2.0;
-        c.im = 4.0 * (mfloat_t)row / (mfloat_t)gbl.height - 2.0;
+        c.re = 4.0L * (mfloat_t)col / (mfloat_t)gbl.width  - 2.0L;
+        c.im = 4.0L * (mfloat_t)row / (mfloat_t)gbl.height - 2.0L;
 
         c.re = c.re * gbl.zoom_pct - gbl.zoom_xoffs;
         c.im = c.im * gbl.zoom_pct - gbl.zoom_yoffs;
@@ -142,6 +142,7 @@ iterate_normal(complex_t c)
         complex_t z = { .re = 0.0L, .im = 0.0L };
 
         for (i = 0; i < n; i++) {
+                /* new z = z^2 + c */
                 complex_t ztmp = complex_add(complex_sq(z), c);
                 /* Too precise for our data types. Assume inside. */
                 if (ztmp.re == z.re && ztmp.im == z.im)
@@ -172,7 +173,7 @@ iterate_normal(complex_t c)
                         int v = rand();
                         /* Don't guess if the compiler uses ASR instead of LSR */
                         if (v < 0)
-                                v = -1 * (v & 0xff);
+                                v = (~0ul << 8) | (v & 0xff);
                         else
                                 v &= 0xff;
                         mfloat_t diff = (mfloat_t)v / 128.0L;
