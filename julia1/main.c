@@ -7,8 +7,6 @@
 #include <math.h>
 #include <string.h>
 
-static const mfloat_t pi = 3.14159265359;
-
 struct gbl_t gbl = {
         .pxbuf = NULL,
         .n_iteration = 1000,
@@ -194,15 +192,11 @@ main(int argc, char **argv)
                         gbl.cx = strtod(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
-                        if (endptr[0] == 'p' && endptr[1] == 'i')
-                                gbl.cx *= pi;
                         break;
                 case 'I': /* Imaginary part of c */
                         gbl.cy = strtod(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
-                        if (endptr[0] == 'p' && endptr[1] == 'i')
-                                gbl.cy *= pi;
                         break;
                 default:
                         usage();
