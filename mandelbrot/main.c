@@ -277,8 +277,9 @@ mandelbrot(void)
                         *ptbuf++ = v;
                 }
         }
-        putchar('\n');
-        printf("min: %Lg max: %Lg\n", min, max);
+        if (TRACK_PROGRESS)
+                putchar('\n');
+        printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
