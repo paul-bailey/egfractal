@@ -227,7 +227,7 @@ mandelbrot_px(int row, int col)
                  */
                 mfloat_t xp = c.re - 0.25L;
                 mfloat_t ysq = c.im * c.im;
-                mfloat_t q = c.re * c.re + ysq;
+                mfloat_t q = xp * xp + ysq;
                 if ((q * (q + xp)) < (0.25L * ysq))
                         return INSIDE;
                 xp = c.re + 1.0L;
