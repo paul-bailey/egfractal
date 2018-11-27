@@ -16,6 +16,8 @@ extern struct gbl_t {
         mfloat_t zoom_yoffs;
         mfloat_t cx;
         mfloat_t cy;
+        mfloat_t bailout;
+        mfloat_t bailoutsq;
 } gbl;
 
 /* palette.c */

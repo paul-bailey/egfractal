@@ -19,6 +19,8 @@ struct gbl_t gbl = {
         .zoom_yoffs = 0.0,
         .cx = -0.70176,
         .cy = -0.3842,
+        .bailout = 2.0L,
+        .bailoutsq = 4.0L,
 };
 
 /* initialized early in main() */
@@ -65,7 +67,7 @@ julia_px(int row, int col)
 
         z = xy_to_complex(row, col);
         for (i = 0; i < gbl.n_iteration; i++) {
-                if (complex_modulus2(z) >= 4.0)
+                if (complex_modulus2(z) >= gbl.bailoutsq)
                         break;
                 /* "z = z^2 + c */
                 z = complex_add(complex_sq(z), c);
@@ -157,8 +159,14 @@ main(int argc, char **argv)
         /* Initialize this "constant" */
         log_2 = logl(2.0L);
 
-        while ((opt = getopt(argc, argv, "d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
                 switch (opt) {
+                case 'b':
+                        gbl.bailout = strtold(optarg, &endptr);
+                        if (endptr == optarg)
+                                usage();
+                        gbl.bailoutsq = gbl.bailout * gbl.bailout;
+                        break;
                 case 'd':
                         gbl.dither = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
