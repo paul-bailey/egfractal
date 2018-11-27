@@ -87,9 +87,9 @@ julia_px(int row, int col)
 
                 /* TODO: Smooth by distance */
                 if (gbl.dither) {
-                        mfloat_t log_zn = log10(complex_modulus2(z)) / 2.0;
-                        mfloat_t log_2 = log10(2.0);
-                        mfloat_t nu = log10(log_zn / log_2) / log_2;
+                        mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0;
+                        mfloat_t log_2 = logl(2.0);
+                        mfloat_t nu = logl(log_zn / log_2) / log_2;
                         ret += 1.0 - nu;
                 }
 
@@ -151,17 +151,17 @@ main(int argc, char **argv)
                         gbl.dither = true;
                         break;
                 case 'z':
-                        gbl.zoom_pct = strtod(optarg, &endptr);
+                        gbl.zoom_pct = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;
                 case 'x':
-                        gbl.zoom_xoffs = strtod(optarg, &endptr);
+                        gbl.zoom_xoffs = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;
                 case 'y':
-                        gbl.zoom_yoffs = strtod(optarg, &endptr);
+                        gbl.zoom_yoffs = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;
@@ -189,12 +189,12 @@ main(int argc, char **argv)
                                 usage();
                         break;
                 case 'R': /* Real part of c */
-                        gbl.cx = strtod(optarg, &endptr);
+                        gbl.cx = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;
                 case 'I': /* Imaginary part of c */
-                        gbl.cy = strtod(optarg, &endptr);
+                        gbl.cy = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;

@@ -120,7 +120,7 @@ initialize_pallette(void)
                         /* slightly yellow */
                         unsigned int rg = i * 256 / NCOLOR;
                         unsigned int b = rg * 204 / 256;
-                        rg = (int)(sqrt((mfloat_t)rg/256.0) * 256.0);
+                        rg = (int)(sqrtl((mfloat_t)rg/256.0) * 256.0);
                         if (rg > 255)
                                 rg = 255;
                         b = b * b / 256;
