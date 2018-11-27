@@ -7,7 +7,7 @@
 extern struct gbl_t {
         Pxbuf *pxbuf;
         unsigned long n_iteration;
-        bool dither;
+        int dither;
         int height;
         int width;
         int pallette;

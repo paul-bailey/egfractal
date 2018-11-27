@@ -10,7 +10,7 @@
 struct gbl_t gbl = {
         .pxbuf = NULL,
         .n_iteration = 1000,
-        .dither = false,
+        .dither = 0,
         .height = 600,
         .width = 600,
         .pallette = 2,
@@ -20,6 +20,9 @@ struct gbl_t gbl = {
         .cx = -0.70176,
         .cy = -0.3842,
 };
+
+/* initialized early in main() */
+static mfloat_t log_2;
 
 /* Error helpers */
 static void
@@ -73,24 +76,29 @@ julia_px(int row, int col)
 
         /* TODO: Dither here */
         ret = (mfloat_t)i;
-        if (i < gbl.n_iteration) {
-                if (gbl.dither) {
+        if (gbl.dither > 0) {
+                if (!!(gbl.dither & 01)) {
+                        /*
+                         * Smooth by distance
+                         *
+                         * XXX: This is the estimate for Mandelbrot set.
+                         * Is this correct?
+                         */
+                        mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0;
+                        mfloat_t nu = logl(log_zn / log_2) / log_2;
+                        if (isfinite(log_zn) && isfinite(nu))
+                                ret += 1.0L - nu;
+                }
+
+                if (!!(gbl.dither & 02)) {
                         /* Smooth by dithering */
                         int v = rand();
                         if (v < 0)
-                                v = -1 * (v & 0xff);
+                                v = (~0ul << 8) | (v & 0xff);
                         else
                                 v &= 0xff;
-                        mfloat_t diff = (mfloat_t)v / 128.0;
+                        mfloat_t diff = (mfloat_t)v / 128.0L;
                         ret += diff;
-                }
-
-                /* TODO: Smooth by distance */
-                if (gbl.dither) {
-                        mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0;
-                        mfloat_t log_2 = logl(2.0);
-                        mfloat_t nu = logl(log_zn / log_2) / log_2;
-                        ret += 1.0 - nu;
                 }
 
                 if (ret >= (mfloat_t)gbl.n_iteration)
@@ -145,10 +153,16 @@ main(int argc, char **argv)
         char *endptr;
         int opt;
         const char *outfile = "julia1.bmp";
-        while ((opt = getopt(argc, argv, "dz:x:y:w:h:n:R:I:p:o:")) != -1) {
+
+        /* Initialize this "constant" */
+        log_2 = logl(2.0L);
+
+        while ((opt = getopt(argc, argv, "d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
                 switch (opt) {
                 case 'd':
-                        gbl.dither = true;
+                        gbl.dither = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                usage();
                         break;
                 case 'z':
                         gbl.zoom_pct = strtold(optarg, &endptr);
