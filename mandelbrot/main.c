@@ -207,7 +207,7 @@ iterate_distance(complex_t c)
         }
 
         /* Return distance normalized to the colorspace */
-        return (complex_mod(z) * logl(complex_mod(z)) / complex_mod(dz)) * 255 / 4.0;
+        return complex_mod(z) * logl(complex_mod(z)) / complex_mod(dz);
 }
 
 static mfloat_t
