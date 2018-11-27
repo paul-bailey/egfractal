@@ -14,7 +14,7 @@ enum {
 
 static struct gbl_t {
 	Pxbuf *pxbuf;
-	int n_iteration;
+	unsigned long n_iteration;
 	bool dither;
 	int height;
 	int width;
@@ -40,32 +40,19 @@ static struct gbl_t {
 
 
 /* scale pixels to points of mandelbrot set and handle zoom. */
-static void
-x0y0(double *x0, double *y0, int row, int col)
+static complex_t
+xy_to_complex(int row, int col)
 {
-        double x, y, w, h;
+        complex_t c;
 
-        /*
-         * Swapping col with row here because this
-         * is a**-backwards, too.
-         */
-        x = (double)col;
-        y = (double)row;
-        w = (double)gbl.width;
-        h = (double)gbl.height;
+        c.re = 4.0L * (mfloat_t)col / (mfloat_t)gbl.width  - 2.0L;
+        c.im = 4.0L * (mfloat_t)row / (mfloat_t)gbl.height - 2.0L;
 
-        x = 4.0 * x / w - 2.0;
-        y = 4.0 * y / h - 2.0;
-
-        x *= gbl.zoom_pct;
-        y *= gbl.zoom_pct;
-
-        x -= gbl.zoom_xoffs;
-        y -= gbl.zoom_yoffs;
-
-        *x0 = x;
-        *y0 = y;
+        c.re = c.re * gbl.zoom_pct - gbl.zoom_xoffs;
+        c.im = c.im * gbl.zoom_pct - gbl.zoom_yoffs;
+        return c;
 }
+
 
 static unsigned int pallette[NCOLOR];
 #define NO_COLOR ((unsigned int)~0ul)
@@ -190,6 +177,7 @@ initialize_pallette(void)
 		break;
 	}
 }
+
 static unsigned int
 get_color(double idx)
 {
@@ -200,7 +188,7 @@ get_color(double idx)
 		/* Need to initialize pallette */
 		initialize_pallette();
 	}
-	if ((int)idx >= gbl.n_iteration)
+	if (idx < 0.0L || (unsigned long)idx >= gbl.n_iteration)
 		return inside_color;
 
 	/* Linear interpolation of pallette[idx % NCOLOR] */
@@ -210,24 +198,26 @@ get_color(double idx)
 	return linear_interp(v1, v2, modf(idx, &idx));
 }
 
+#define INSIDE (-1.0L)
 
 static double
 julia_px(int row, int col)
 {
-	double x, y, zx, zy, ret;
-	int i;
+	double ret;
+	unsigned long i;
+        complex_t z;
+        complex_t c = { .re = gbl.cx, .im = gbl.cy };
 
-	x0y0(&x, &y, row, col);
-	zx = x;
-	zy = y;
+	z = xy_to_complex(row, col);
 	for (i = 0; i < gbl.n_iteration; i++) {
-		double xtmp;
-		if ((zx * zx + zy * zy) >= 4.0)
+                if (complex_modulus2(z) >= 4.0)
 			break;
-		xtmp = zx * zx - zy * zy;
-                zy = 2.0 * zx * zy + gbl.cy;
-                zx = xtmp + gbl.cx;
+                /* "z = z^2 + c */
+                z = complex_add(complex_sq(z), c);
 	}
+
+        if (i == gbl.n_iteration)
+                return INSIDE;
 
 	/* TODO: Dither here */
 	ret = (double)i;
@@ -242,13 +232,15 @@ julia_px(int row, int col)
 			double diff = (double)v / 128.0;
 			ret += diff;
 		}
+
 		/* TODO: Smooth by distance */
 		if (gbl.dither) {
-			double log_zn = log10(zx * zx + zy * zy) / 2.0;
+			double log_zn = log10(complex_modulus2(z)) / 2.0;
 			double log_2 = log10(2.0);
 			double nu = log10(log_zn / log_2) / log_2;
 			ret += 1.0 - nu;
 		}
+
 		if (ret >= (double)gbl.n_iteration)
 			ret = (double)(gbl.n_iteration - 1);
 		else if (ret < 0.0)
