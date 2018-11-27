@@ -205,6 +205,7 @@ iteration_to_color(mfloat_t iter_count)
 {
         int i;
         unsigned int v1, v2;
+        long double dummy = 0;
 
         if (inside_color == NO_COLOR)
                 initialize_palette();
@@ -216,7 +217,7 @@ iteration_to_color(mfloat_t iter_count)
         i = (int)iter_count % NCOLOR;
         v1 = palette[i];
         v2 = palette[i == NCOLOR - 1 ? 0 : i + 1];
-        return linear_interp(v1, v2, modfl(iter_count, &iter_count));
+        return linear_interp(v1, v2, modfl(iter_count, &dummy));
 }
 
 unsigned int
