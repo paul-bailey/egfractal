@@ -15,10 +15,6 @@ static struct gbl_t {
         int height;
         int width;
         int min;
-        mfloat_t zoom_pct;
-        mfloat_t zoom_pct_inv;
-        mfloat_t zoom_xoffs;
-        mfloat_t zoom_yoffs;
         mfloat_t bailout;
         mfloat_t bailsqu;
         unsigned long points;
@@ -32,9 +28,6 @@ static struct gbl_t {
         .height     = 600,
         .width      = 600,
         .min        = 3,
-        .zoom_pct   = 1.0,
-        .zoom_xoffs = 0.0,
-        .zoom_yoffs = 0.0,
         .bailsqu    = 4.0,
         .bailout    = 2.0,
         .points     = 500000,
@@ -221,9 +214,6 @@ bbrot1(Pxbuf *pxbuf)
 
         nchan = gbl.singlechan ? 1 : 3;
 
-        /* Initialize this */
-        gbl.zoom_pct_inv = 1.0 / gbl.zoom_pct;
-
         buffer = malloc(npx * sizeof(*buffer) * nchan);
         if (!buffer)
                 oom();
@@ -297,7 +287,7 @@ main(int argc, char **argv)
         int opt;
         Pxbuf *pxbuf = NULL;
         char *outfile = "buddhabrot1.bmp";
-        while ((opt = getopt(argc, argv, "HB:b:g:h:m:o:p:r:svw:x:y:z:")) != -1) {
+        while ((opt = getopt(argc, argv, "HB:b:g:h:m:o:p:r:svw:")) != -1) {
                 switch (opt) {
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
@@ -349,21 +339,6 @@ main(int argc, char **argv)
                         break;
                 case 'w':
                         gbl.width = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'x':
-                        gbl.zoom_xoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'y':
-                        gbl.zoom_yoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'z':
-                        gbl.zoom_pct = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
                         break;
