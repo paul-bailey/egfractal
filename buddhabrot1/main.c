@@ -85,7 +85,7 @@ iterate_r(complex_t c, unsigned long *buf, int n, bool isdivergent)
                         unsigned int drawnx, drawny;
                         graph_to_pixel(ztmp, &drawnx, &drawny);
                         if (drawnx < gbl.width && drawny < gbl.height) {
-                                buf[drawny * gbl.height + drawnx]++;
+                                buf[drawny * gbl.width + drawnx]++;
                         }
                 }
 
