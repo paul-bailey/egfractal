@@ -27,22 +27,12 @@ struct gbl_t gbl = {
 static mfloat_t log_2;
 static const mfloat_t INSIDE = -1.0L;
 
-
-/* **********************************************************************
- *                           Error helpers
- ***********************************************************************/
-
 static void
 oom(void)
 {
         fprintf(stderr, "OOM!\n");
         exit(EXIT_FAILURE);
 }
-
-
-/* **********************************************************************
- *                      The algorithm
- ***********************************************************************/
 
 /* scale pixels to points of mandelbrot set and handle zoom. */
 static complex_t
@@ -144,10 +134,10 @@ mandelbrot_px(int row, int col)
         complex_t c = xy_to_complex(row, col);
         if (gbl.n_iteration > THRESHOLD) {
                 /*
-                 * Faster to do this and throw away pixels that are in
-                 * the main cardioid and circle.
-                 *
-                 * XXX: Is the 0.25 meant to be sqrt(bailout)? I forget.
+                 * We know the formula for the main cardioid and bulb,
+                 * and we know every point inside will converge.  So we
+                 * can check that first before diving into the long
+                 * iterative process.
                  */
                 mfloat_t xp = c.re - 0.25L;
                 mfloat_t ysq = c.im * c.im;
@@ -168,10 +158,6 @@ mandelbrot_px(int row, int col)
 static void
 mandelbrot(Pxbuf *pxbuf)
 {
-        /* TODO: Determine here if out zoomed image touches the
-         * cardioid or largest circle.  That way we won't have the
-         * additional check in the iterative algorithm.
-         */
         int row, col;
         mfloat_t *ptbuf, *tbuf, min, max;
 
