@@ -8,7 +8,6 @@
 #include <math.h>
 
 static struct gbl_t {
-        Pxbuf *pxbuf;
         int n_red;
         int n_green;
         int n_blue;
@@ -26,7 +25,6 @@ static struct gbl_t {
         bool do_hist;
         bool verbose;
 } gbl = {
-        .pxbuf      = NULL,
         .n_red      = 5000,
         .n_green    = 500,
         .n_blue     = 50,
@@ -189,7 +187,7 @@ hist_eq(unsigned long *chanbuf, unsigned int npx)
 }
 
 static void
-bbrot1(void)
+bbrot1(Pxbuf *pxbuf)
 {
         unsigned short seeds[6] = {
                 /* TODO: See some gnarly stuff when these are identical! */
@@ -269,7 +267,7 @@ bbrot1(void)
                                 g = 255;
                         if (b > 255)
                                 b = 255;
-                        pxbuf_fill_pixel(gbl.pxbuf, row, col, TO_RGB(r, g, b));
+                        pxbuf_fill_pixel(pxbuf, row, col, TO_RGB(r, g, b));
                 }
 
         }
@@ -282,6 +280,7 @@ main(int argc, char **argv)
         FILE *fp;
         char *endptr;
         int opt;
+        Pxbuf *pxbuf = NULL;
         char *outfile = "buddhabrot1.bmp";
         while ((opt = getopt(argc, argv, "HB:b:g:h:m:o:p:r:svw:x:y:z:")) != -1) {
                 switch (opt) {
@@ -369,21 +368,21 @@ main(int argc, char **argv)
                 return 1;
         }
 
-        gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
-        if (!gbl.pxbuf)
+        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
+        if (!pxbuf)
                 oom();
 
-        bbrot1();
+        bbrot1(pxbuf);
 
         fp = fopen(outfile, "wb");
         if (!fp) {
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
-        pxbuf_rotate(gbl.pxbuf);
-        pxbuf_print(gbl.pxbuf, fp);
+        pxbuf_rotate(pxbuf);
+        pxbuf_print(pxbuf, fp);
         fclose(fp);
 
-        pxbuf_free(gbl.pxbuf);
+        pxbuf_free(pxbuf);
         return 0;
 }
