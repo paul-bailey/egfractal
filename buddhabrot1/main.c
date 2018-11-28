@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 
 static struct gbl_t {
         int n_red;
@@ -187,13 +188,25 @@ hist_eq(unsigned long *chanbuf, unsigned int npx)
 }
 
 static void
+initialize_seeds(unsigned short seeds[6])
+{
+        time_t t = time(NULL);
+        seeds[0] = seeds[3] = t & 0xffffu;
+        seeds[1] = seeds[4] = (t >> 16) & 0xffffu;
+        /*
+         * These need to be different to converge x from y,
+         * or else x == y always, and we are only ever sampling
+         * the diagonal line.  This makes for a trippy picture,
+         * but not the one we're looking for.
+         */
+        seeds[2] = 5;
+        seeds[5] = 6;
+}
+
+static void
 bbrot1(Pxbuf *pxbuf)
 {
-        unsigned short seeds[6] = {
-                /* TODO: See some gnarly stuff when these are identical! */
-                0xe66d, 0xdeec, 6,
-                0xe66d, 0xdeec, 5,
-        };
+        unsigned short seeds[6];
         int n[3] = { gbl.n_red, gbl.n_green, gbl.n_blue };
         int row, col, npct, nchan;
         unsigned long i; /* must be wide as gbl.points */
@@ -203,6 +216,8 @@ bbrot1(Pxbuf *pxbuf)
         unsigned long *chanbuf[3];
         /* Since I use this all over */
         unsigned int npx =  gbl.width * gbl.height;
+
+        initialize_seeds(seeds);
 
         nchan = gbl.singlechan ? 1 : 3;
 
