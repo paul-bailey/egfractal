@@ -24,6 +24,7 @@ static struct gbl_t {
         unsigned long points;
 	bool singlechan;
         bool do_hist;
+        bool verbose;
 } gbl = {
         .pxbuf      = NULL,
         .n_red      = 5000,
@@ -40,6 +41,7 @@ static struct gbl_t {
         .points     = 500000,
 	.singlechan = false,
         .do_hist    = false,
+        .verbose    = true,
 };
 
 /* Error helpers */
@@ -217,14 +219,15 @@ bbrot1(void)
         	chanbuf[i] = &buffer[npx * i];
 
 	pctcount = npct = 0;
-	printf("Progress     ");
+        if (gbl.verbose)
+	        printf("Progress     ");
         for (i = 0; i < gbl.points; i++) {
                 complex_t c;
                 int chan;
 
                 c.re = erand48(&seeds[0]) * 3.0 - 2.0;
                 c.im = erand48(&seeds[3]) * 3.0 - 1.5;
-		if (pctcount++ == onepct) {
+		if (gbl.verbose && (pctcount++ == onepct)) {
 			npct++;
 			pctcount = 0;
 			printf("\e[3D%3d", npct);
@@ -233,7 +236,8 @@ bbrot1(void)
         	for (chan = 0; chan < nchan; chan++)
 			iterate(c, chanbuf[chan], n[chan]);
         }
-	putchar('\n');
+        if (gbl.verbose)
+	        putchar('\n');
 
 	for (i = 0; i < nchan; i++) {
                 if (gbl.do_hist)
@@ -279,7 +283,7 @@ main(int argc, char **argv)
 	char *endptr;
 	int opt;
         char *outfile = "buddhabrot1.bmp";
-	while ((opt = getopt(argc, argv, "HB:o:z:x:y:w:h:r:g:b:p:sm:")) != -1) {
+	while ((opt = getopt(argc, argv, "HB:b:g:h:m:o:p:r:svw:x:y:z:")) != -1) {
 		switch (opt) {
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
@@ -290,33 +294,8 @@ main(int argc, char **argv)
                 case 'H':
                         gbl.do_hist = true;
                         break;
-		case 'z':
-			gbl.zoom_pct = strtold(optarg, &endptr);
-			if (endptr == optarg)
-				usage();
-			break;
-		case 'x':
-			gbl.zoom_xoffs = strtold(optarg, &endptr);
-			if (endptr == optarg)
-				usage();
-			break;
-		case 'y':
-			gbl.zoom_yoffs = strtold(optarg, &endptr);
-			if (endptr == optarg)
-				usage();
-			break;
-		case 'w':
-			gbl.width = strtoul(optarg, &endptr, 0);
-			if (endptr == optarg)
-				usage();
-			break;
-		case 'h':
-			gbl.height = strtoul(optarg, &endptr, 0);
-			if (endptr == optarg)
-				usage();
-			break;
-		case 'r':
-			gbl.n_red = strtoul(optarg, &endptr, 0);
+		case 'b':
+			gbl.n_blue = strtoul(optarg, &endptr, 0);
 			if (endptr == optarg)
 				usage();
 			break;
@@ -325,8 +304,8 @@ main(int argc, char **argv)
 			if (endptr == optarg)
 				usage();
 			break;
-		case 'b':
-			gbl.n_blue = strtoul(optarg, &endptr, 0);
+		case 'h':
+			gbl.height = strtoul(optarg, &endptr, 0);
 			if (endptr == optarg)
 				usage();
 			break;
@@ -343,8 +322,36 @@ main(int argc, char **argv)
 			if (endptr == optarg)
 				usage();
 			break;
+		case 'r':
+			gbl.n_red = strtoul(optarg, &endptr, 0);
+			if (endptr == optarg)
+				usage();
+			break;
 		case 's':
 			gbl.singlechan = true;
+			break;
+                case 'v':
+                        gbl.verbose = true;
+                        break;
+		case 'w':
+			gbl.width = strtoul(optarg, &endptr, 0);
+			if (endptr == optarg)
+				usage();
+			break;
+		case 'x':
+			gbl.zoom_xoffs = strtold(optarg, &endptr);
+			if (endptr == optarg)
+				usage();
+			break;
+		case 'y':
+			gbl.zoom_yoffs = strtold(optarg, &endptr);
+			if (endptr == optarg)
+				usage();
+			break;
+		case 'z':
+			gbl.zoom_pct = strtold(optarg, &endptr);
+			if (endptr == optarg)
+				usage();
 			break;
 		default:
 			usage();
