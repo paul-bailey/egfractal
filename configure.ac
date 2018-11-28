@@ -3,7 +3,7 @@ AC_INIT([roscid-fractal], [1.0], [roscidcup@falstaffandme.com])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/m4])
-AC_CONFIG_SRCDIR([examples/mbrot2.c])
+AC_CONFIG_SRCDIR([mandelbrot/palette.c])
 AC_CONFIG_HEADERS([config.h])
 
 LT_PREREQ([2.2])
