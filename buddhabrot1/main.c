@@ -41,7 +41,7 @@ static struct gbl_t {
         .points     = 500000,
         .singlechan = false,
         .do_hist    = false,
-        .verbose    = true,
+        .verbose    = false,
 };
 
 /* Error helpers */
