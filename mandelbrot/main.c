@@ -7,7 +7,6 @@
 #include <string.h>
 
 struct gbl_t gbl = {
-        .pxbuf          = NULL,
         .n_iteration    = 1000,
         .dither         = 0,
         .height         = 600,
@@ -167,7 +166,7 @@ mandelbrot_px(int row, int col)
 }
 
 static void
-mandelbrot(void)
+mandelbrot(Pxbuf *pxbuf)
 {
         /* TODO: Determine here if out zoomed image touches the
          * cardioid or largest circle.  That way we won't have the
@@ -209,7 +208,7 @@ mandelbrot(void)
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         unsigned int color = get_color(*ptbuf++, min, max);
-                        pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
+                        pxbuf_fill_pixel(pxbuf, row, col, color);
                 }
         }
         free(tbuf);
@@ -222,6 +221,7 @@ main(int argc, char **argv)
                 .outfile = "mandelbrot.bmp",
                 .print_palette = false,
         };
+        Pxbuf *pxbuf;
         FILE *fp;
 
         /* need to set these "consts" first */
@@ -229,8 +229,8 @@ main(int argc, char **argv)
 
         parse_args(argc, argv, &optflags);
 
-        gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
-        if (!gbl.pxbuf)
+        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
+        if (!pxbuf)
                 oom();
 
         /*
@@ -238,7 +238,7 @@ main(int argc, char **argv)
          * time, and it's impolite to have a file open for that long.
          */
         if (!optflags.print_palette)
-                mandelbrot();
+                mandelbrot(pxbuf);
 
         fp = fopen(optflags.outfile, "wb");
         if (!fp) {
@@ -248,10 +248,10 @@ main(int argc, char **argv)
         }
 
         if (optflags.print_palette)
-                print_palette_to_bmp();
-        pxbuf_print(gbl.pxbuf, fp);
+                print_palette_to_bmp(pxbuf);
+        pxbuf_print(pxbuf, fp);
         fclose(fp);
-        pxbuf_free(gbl.pxbuf);
+        pxbuf_free(pxbuf);
         return 0;
 }
 

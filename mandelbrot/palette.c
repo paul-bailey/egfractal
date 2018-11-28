@@ -218,7 +218,7 @@ get_color(mfloat_t esc_val, mfloat_t min, mfloat_t max)
 
 /* XXX REVISIT: Hierarchically asymmetrical to get_color() */
 void
-print_palette_to_bmp(void)
+print_palette_to_bmp(Pxbuf *pxbuf)
 {
         int row, col;
         if (inside_color == NO_COLOR)
@@ -232,7 +232,7 @@ print_palette_to_bmp(void)
                         v1 = palette[i];
                         v2 = palette[i == NCOLOR-1 ? 0 : i + 1];
                         color = linear_interp(v1, v2, modf(idx, &idx));
-                        pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
+                        pxbuf_fill_pixel(pxbuf, row, col, color);
                 }
         }
 }

@@ -7,7 +7,6 @@ typedef long double mfloat_t;
 
 /* main.c */
 extern struct gbl_t {
-        Pxbuf *pxbuf;
         unsigned long n_iteration;
         unsigned int dither;
         unsigned int height;
@@ -26,8 +25,7 @@ extern struct gbl_t {
 
 /* palette.c */
 extern unsigned int get_color(mfloat_t idx, mfloat_t min, mfloat_t max);
-extern void print_palette_to_bmp(void);
-extern void print_palette_to_c(void);
+extern void print_palette_to_bmp(Pxbuf *pxbuf);
 
 /* parse_args.c */
 struct optflags_t {
