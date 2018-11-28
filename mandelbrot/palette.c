@@ -151,6 +151,22 @@ initialize_palette(void)
                         palette[i] = TO_RGB(red[i], green[i], blue[i]);
                 }
                 break;
+        case 5:
+                inside_color = COLOR_BLACK;
+                for (i = 0; i < NCOLOR; i++) {
+                        static const double PHY_SCALAR = 6.283185307 / (double)NCOLOR;
+                        double phi = (double)i * PHY_SCALAR;
+                        red[i] = (int)(sin(phi) * 128.0) + 128;
+                        if (red[i] > 255)
+                                red[i] = 255;
+                        green[i] = (int)(cos(phi) * 0.8 * 128.0) + 128;
+                        if (green[i] > 255)
+                                blue[i] = 255;
+                        blue[i] = 20;
+                        palette[i] = TO_RGB(red[i], green[i], blue[i]);
+                }
+                break;
+
         case 4:
                 inside_color = COLOR_WHITE;
                 for (i = 0; i < NCOLOR; i++) {
