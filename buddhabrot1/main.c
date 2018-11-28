@@ -380,6 +380,7 @@ main(int argc, char **argv)
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
+        pxbuf_rotate(gbl.pxbuf);
         pxbuf_print(gbl.pxbuf, fp);
         fclose(fp);
 

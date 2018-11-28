@@ -38,6 +38,7 @@ extern void pxbuf_filter_row(Pxbuf *pxbuf, int row,
                              const unsigned int *filter, int filterlen);
 extern void pxbuf_filter_column(Pxbuf *pxbuf, int col,
                              const unsigned int *filter, int filterlen);
+extern int pxbuf_rotate(Pxbuf *pxbuf);
 extern void pxbuf_print(Pxbuf *pxbuf, FILE *fp);
 extern Pxbuf *pxbuf_create(int width, int height, unsigned int color);
 extern void pxbuf_free(Pxbuf *pxbuf);

@@ -139,6 +139,17 @@ pxbuf_fill_pixel(Pxbuf *pxbuf, unsigned int row,
         pxbuf_fill_pixel_safe(pxbuf_colptr_safe(pxbuf, row, col), color);
 }
 
+static unsigned int
+pxbuf_get_pixel(Pxbuf *pxbuf, unsigned int row,
+                unsigned int col)
+{
+        /* TODO: If made public, add safety check */
+        unsigned char *colptr = pxbuf_colptr_safe(pxbuf, row, col);
+        return (unsigned int)colptr[0]
+                | ((unsigned int)colptr[1] << 8)
+                | ((unsigned int)colptr[2] << 16);
+}
+
 /*
  * FIXME: These filters are one-dimensional on a 2-D plane.
  * Revisit my old DSP class notes w/r/t 2-D convolution.
@@ -208,6 +219,38 @@ e_tcolor:
 e_tbuf:
         fprintf(stderr, "OOM!\n");
         exit(EXIT_FAILURE);
+}
+
+/* Rotate right 90 degrees */
+int
+pxbuf_rotate(Pxbuf *pxbuf)
+{
+        Pxbuf tmp;
+        int row, col;
+
+        tmp.heightpx = pxbuf->widthpx;
+        tmp.widthpx = pxbuf->heightpx;
+        tmp.depth = pxbuf->depth;
+        tmp.bytewidth = tmp.widthpx * RGB_NCHAN;
+        tmp.bufsize = pxbuf->bufsize;
+        /* XXX REVISIT: Surely there's a faster swap-in-place method */
+        tmp.buf = malloc(tmp.bufsize);
+        if (!tmp.buf)
+                return -1;
+
+        for (row = 0; row < pxbuf->heightpx; row++) {
+                for (col = 0; col < pxbuf->widthpx; col++) {
+                        unsigned int color = pxbuf_get_pixel(pxbuf, row, col);
+                        /* row is now col and col is now row */
+                        pxbuf_fill_pixel(&tmp, col, row, color);
+                }
+        }
+
+        /* Don't zombify our old buffer */
+        free(pxbuf->buf);
+
+        memcpy(pxbuf, &tmp, sizeof(*pxbuf));
+        return 0;
 }
 
 /**
