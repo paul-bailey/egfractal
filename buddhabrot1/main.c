@@ -59,17 +59,14 @@ bad_arg(const char *type, const char *optarg)
 }
 
 static void
-graph_to_pixel(complex_t c, unsigned int *px, unsigned int *py)
+save_to_hist(unsigned long *buf, complex_t c)
 {
         static const mfloat_t THIRD = 1.0 / 3.0;
-        /*
-         * TODO: Factor in zoom.  We can't zoom for calculations,
-         * but we can for final result.  This would require 7 gazillion
-         * samples and would take forever, but we wouldn't be allocating
-         * such a large buffer while we're doing it.
-         */
-        *px = (int)((mfloat_t)gbl.width * ((c.re + 2.0) * THIRD) + 0.5);
-        *py = (int)((mfloat_t)gbl.height * ((c.im + 1.5) * THIRD) + 0.5);
+
+        unsigned int col = (int)((mfloat_t)gbl.width * ((c.re + 2.0) * THIRD) + 0.5);
+        unsigned int row = (int)((mfloat_t)gbl.height * ((c.im + 1.5) * THIRD) + 0.5);
+        if (col < gbl.width && row < gbl.height)
+                buf[row * gbl.width + col]++;
 }
 
 static void
@@ -81,13 +78,8 @@ iterate_r(complex_t c, unsigned long *buf, int n, bool isdivergent)
         for (i = 0; i < n; i++) {
                 /* next z = z^2 + c */
                 complex_t ztmp = complex_add(complex_sq(z), c);
-                if (isdivergent && i > min) {
-                        unsigned int drawnx, drawny;
-                        graph_to_pixel(ztmp, &drawnx, &drawny);
-                        if (drawnx < gbl.width && drawny < gbl.height) {
-                                buf[drawny * gbl.width + drawnx]++;
-                        }
-                }
+                if (isdivergent && i > min)
+                        save_to_hist(buf, ztmp);
 
                 /* Check both bailout and periodicity */
                 if (complex_modulus2(ztmp) >= gbl.bailsqu
