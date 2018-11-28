@@ -189,6 +189,11 @@ hist_eq(unsigned long *chanbuf, unsigned int npx)
 static void
 bbrot1(void)
 {
+        unsigned short seeds[6] = {
+                /* TODO: See some gnarly stuff when these are identical! */
+                0xe66d, 0xdeec, 6,
+                0xe66d, 0xdeec, 5,
+        };
         int n[3] = { gbl.n_red, gbl.n_green, gbl.n_blue };
         int row, col, npct, nchan;
 	unsigned long i; /* must be wide as gbl.points */
@@ -217,8 +222,8 @@ bbrot1(void)
                 complex_t c;
                 int chan;
 
-                c.re = drand48() * 3.0 - 2.0;
-                c.im = drand48() * 3.0 - 1.5;
+                c.re = erand48(&seeds[0]) * 3.0 - 2.0;
+                c.im = erand48(&seeds[3]) * 3.0 - 1.5;
 		if (pctcount++ == onepct) {
 			npct++;
 			pctcount = 0;
