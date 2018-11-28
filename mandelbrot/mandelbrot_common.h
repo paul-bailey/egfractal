@@ -5,6 +5,7 @@
 
 typedef long double mfloat_t;
 
+/* main.c */
 extern struct gbl_t {
         Pxbuf *pxbuf;
         unsigned long n_iteration;
@@ -23,9 +24,17 @@ extern struct gbl_t {
         bool verbose;
 } gbl;
 
+/* palette.c */
 extern unsigned int get_color(mfloat_t idx, mfloat_t min, mfloat_t max);
 extern void print_palette_to_bmp(void);
 extern void print_palette_to_c(void);
+
+/* parse_args.c */
+struct optflags_t {
+        bool print_palette;
+        const char *outfile;
+};
+extern void parse_args(int argc, char **argv, struct optflags_t *optflags);
 
 #endif /* MANDELBROT_COMMON_H */
 
