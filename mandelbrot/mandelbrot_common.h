@@ -19,6 +19,7 @@ extern struct gbl_t {
         mfloat_t bailoutsqu;
         unsigned int min_iteration;
         bool distance_est;
+        bool verbose;
 } gbl;
 
 extern unsigned int get_color(mfloat_t idx, mfloat_t min, mfloat_t max);

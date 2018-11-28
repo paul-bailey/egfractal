@@ -7,10 +7,6 @@
 #include <math.h>
 #include <string.h>
 
-enum {
-        TRACK_PROGRESS = 0,
-};
-
 struct gbl_t gbl = {
         .pxbuf          = NULL,
         .n_iteration    = 1000,
@@ -25,6 +21,7 @@ struct gbl_t gbl = {
         .bailoutsqu     = 4.0,
         .min_iteration  = 0,
         .distance_est   = false,
+        .verbose        = false,
 };
 
 /* Initialized to log2l(2.0L) */
@@ -190,7 +187,7 @@ mandelbrot(void)
         if (!tbuf)
                 oom();
 
-        if (TRACK_PROGRESS) {
+        if (gbl.verbose) {
                 printf("Row %9d col %9d", 0, 0);
                 fflush(stdout);
         }
@@ -200,7 +197,7 @@ mandelbrot(void)
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         mfloat_t v;
-                        if (TRACK_PROGRESS) {
+                        if (gbl.verbose) {
                                 printf("\e[23D%9d col %9d", row, col);
                                 fflush(stdout);
                         }
@@ -212,7 +209,7 @@ mandelbrot(void)
                         *ptbuf++ = v;
                 }
         }
-        if (TRACK_PROGRESS)
+        if (gbl.verbose)
                 putchar('\n');
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
         ptbuf = tbuf;
@@ -237,7 +234,7 @@ main(int argc, char **argv)
         /* need to set these "consts" first */
         log_2 = logl(2.0L);
 
-        while ((opt = getopt(argc, argv, "Pp:d:Db:n:h:w:y:x:z:o:")) != -1) {
+        while ((opt = getopt(argc, argv, "vPp:d:Db:n:h:w:y:x:z:o:")) != -1) {
                 switch (opt) {
                 case 'P':
                         print_palette_only = true;
@@ -261,6 +258,9 @@ main(int argc, char **argv)
                         gbl.zoom_yoffs = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 usage();
+                        break;
+                case 'v':
+                        gbl.verbose = true;
                         break;
                 case 'w':
                         gbl.width = strtoul(optarg, &endptr, 0);
