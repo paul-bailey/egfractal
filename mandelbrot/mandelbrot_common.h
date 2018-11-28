@@ -17,6 +17,7 @@ extern struct gbl_t {
         mfloat_t zoom_yoffs;
         mfloat_t bailout;
         mfloat_t bailoutsqu;
+        mfloat_t distance_root;
         unsigned int min_iteration;
         bool distance_est;
         bool verbose;

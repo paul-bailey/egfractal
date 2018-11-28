@@ -175,7 +175,7 @@ distance_to_color(mfloat_t dist, mfloat_t max)
                 return COLOR_BLACK;
 
         /* TODO: Make the root be a command-line option */
-        magn = (unsigned int)(255.0 * pow(dist / max, 0.25));
+        magn = (unsigned int)(255.0 * pow(dist / max, gbl.distance_root));
         if (magn > 255)
                 magn = 255;
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -22,6 +23,7 @@ struct gbl_t gbl = {
         .min_iteration  = 0,
         .distance_est   = false,
         .verbose        = false,
+        .distance_root  = 0.25,
 };
 
 /* Initialized to log2l(2.0L) */
@@ -32,13 +34,6 @@ static const mfloat_t INSIDE = -1.0L;
 /* **********************************************************************
  *                           Error helpers
  ***********************************************************************/
-
-static void
-usage(void)
-{
-        fprintf(stderr, "Bad arg\n");
-        exit(EXIT_FAILURE);
-}
 
 static void
 oom(void)
@@ -222,42 +217,85 @@ mandelbrot(void)
         free(tbuf);
 }
 
-int
-main(int argc, char **argv)
+struct optflags_t {
+        bool print_palette;
+        const char *outfile;
+};
+
+static void
+bad_arg(const char *type, const char *optarg)
 {
-        const char *outfile = "mandelbrot.bmp";
-        int opt;
-        char *endptr;
-        FILE *fp;
-        bool print_palette_only = false;
+        fprintf(stderr, "Bad %s option: `%s'\n", type, optarg);
+        exit(EXIT_FAILURE);
+}
 
-        /* need to set these "consts" first */
-        log_2 = logl(2.0L);
+static void
+parse_args(int argc, char **argv, struct optflags_t *optflags)
+{
+        static const struct option long_options[] = {
+                { "print-palette",  no_argument,       NULL, 0 },
+                { "distance-root",  required_argument, NULL, 1 },
+                { "verbose",        no_argument,       NULL, 'v' },
+                { "bailout",        required_argument, NULL, 'b' },
+                { "smooth-option",  required_argument, NULL, 'd' },
+                { "x-offs",         required_argument, NULL, 'x' },
+                { "y-offs",         required_argument, NULL, 'y' },
+                { "zoom-pct",       required_argument, NULL, 'z' },
+                { "help",           no_argument,       NULL, '?' },
+                { NULL,             0,                 NULL, 0 },
+        };
+        static const char *optstr = "Db:d:h:n:o:p:vw:x:y:z:?";
 
-        while ((opt = getopt(argc, argv, "vPp:d:Db:n:h:w:y:x:z:o:")) != -1) {
+        for (;;) {
+                char *endptr;
+                int option_index = 0;
+                int opt = getopt_long(argc, argv, optstr, long_options, &option_index);
+                if (opt == -1)
+                        break;
+
                 switch (opt) {
-                case 'P':
-                        print_palette_only = true;
+                case 0:
+                        optflags->print_palette = true;
+                        break;
+                case 1:
+                    {
+                        int v = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("--distance-root", optarg);
+                        gbl.distance_root = 1.0L / (mfloat_t)v;
+                        break;
+                    }
+                case 'D':
+                        gbl.distance_est = true;
+                        break;
+                case 'b':
+                        gbl.bailout = strtold(optarg, &endptr);
+                        if (endptr == optarg || !isfinite(gbl.bailout))
+                                bad_arg("-b (bailout radius)", optarg);
+                        gbl.bailoutsqu = gbl.bailout * gbl.bailout;
+                        break;
+                case 'd':
+                        gbl.dither = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("-d (smoothing method)", optarg);
+                        break;
+                case 'h':
+                        gbl.height = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("-h (pixel-height", optarg);
+                        break;
+                case 'n':
+                        gbl.n_iteration = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("-n (no. iterations)", optarg);
+                        break;
+                case 'o':
+                        optflags->outfile = optarg;
                         break;
                 case 'p':
                         gbl.palette = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
-                        break;
-                case 'z':
-                        gbl.zoom_pct = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'x':
-                        gbl.zoom_xoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'y':
-                        gbl.zoom_yoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
+                                bad_arg("-p (palette number)", optarg);
                         break;
                 case 'v':
                         gbl.verbose = true;
@@ -265,39 +303,44 @@ main(int argc, char **argv)
                 case 'w':
                         gbl.width = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-w (pixel-width)", optarg);
                         break;
-                case 'h':
-                        gbl.height = strtoul(optarg, &endptr, 0);
+                case 'x':
+                        gbl.zoom_xoffs = strtold(optarg, &endptr);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-x --x-offs", optarg);
                         break;
-                case 'n':
-                        gbl.n_iteration = strtoul(optarg, &endptr, 0);
+                case 'y':
+                        gbl.zoom_yoffs = strtold(optarg, &endptr);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-y --y-offs", optarg);
                         break;
-                case 'o':
-                        outfile = optarg;
-                        break;
-                case 'b':
-                        gbl.bailout = strtold(optarg, &endptr);
+                case 'z':
+                        gbl.zoom_pct = strtold(optarg, &endptr);
                         if (endptr == optarg)
-                                usage();
-                        gbl.bailoutsqu = gbl.bailout * gbl.bailout;
+                                bad_arg("-z --zoom-pct", optarg);
                         break;
-                case 'd':
-                        gbl.dither = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'D':
-                        gbl.distance_est = true;
-                        break;
+                case '?':
                 default:
-                        usage();
+                        fprintf(stderr, "Unknown option -%c\n", opt);
+                        exit(EXIT_FAILURE);
                 }
         }
+}
+
+int
+main(int argc, char **argv)
+{
+        struct optflags_t optflags = {
+                .outfile = "mandelbrot.bmp",
+                .print_palette = false,
+        };
+        FILE *fp;
+
+        /* need to set these "consts" first */
+        log_2 = logl(2.0L);
+
+        parse_args(argc, argv, &optflags);
 
         gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
         if (!gbl.pxbuf)
@@ -307,16 +350,17 @@ main(int argc, char **argv)
          * Do this before fopen(), because we could be here for a very
          * time, and it's impolite to have a file open for that long.
          */
-        if (!print_palette_only)
+        if (!optflags.print_palette)
                 mandelbrot();
 
-        fp = fopen(outfile, "wb");
+        fp = fopen(optflags.outfile, "wb");
         if (!fp) {
-                fprintf(stderr, "Cannot open output file\n");
+                fprintf(stderr, "Cannot open output file `%s'\n",
+                        optflags.outfile);
                 return 1;
         }
 
-        if (print_palette_only)
+        if (optflags.print_palette)
                 print_palette_to_bmp();
         pxbuf_print(gbl.pxbuf, fp);
         fclose(fp);
