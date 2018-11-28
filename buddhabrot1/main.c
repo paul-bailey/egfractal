@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <math.h>
 #include <time.h>
+#include <getopt.h>
 
 static struct gbl_t {
         int n_red;
@@ -17,10 +18,14 @@ static struct gbl_t {
         int min;
         mfloat_t bailout;
         mfloat_t bailsqu;
+        mfloat_t line_y;
+        mfloat_t line_x;
         unsigned long points;
         bool singlechan;
         bool do_hist;
         bool verbose;
+        bool use_line_y;
+        bool use_line_x;
 } gbl = {
         .n_red      = 5000,
         .n_green    = 500,
@@ -34,6 +39,8 @@ static struct gbl_t {
         .singlechan = false,
         .do_hist    = false,
         .verbose    = false,
+        .use_line_y = false,
+        .use_line_x = false,
 };
 
 /* Error helpers */
@@ -45,9 +52,9 @@ oom(void)
 }
 
 static void
-usage(void)
+bad_arg(const char *type, const char *optarg)
 {
-        fprintf(stderr, "Bad arg\n");
+        fprintf(stderr, "Bad %s option: `%s'\n", type, optarg);
         exit(EXIT_FAILURE);
 }
 
@@ -228,8 +235,14 @@ bbrot1(Pxbuf *pxbuf)
                 complex_t c;
                 int chan;
 
-                c.re = erand48(&seeds[0]) * 3.0 - 2.0;
-                c.im = erand48(&seeds[3]) * 3.0 - 1.5;
+                if (gbl.use_line_x)
+                        c.re = gbl.line_x;
+                else
+                        c.re = erand48(&seeds[0]) * 3.0 - 2.0;
+                if (gbl.use_line_y)
+                        c.im = gbl.line_y;
+                else
+                        c.im = erand48(&seeds[3]) * 3.0 - 1.5;
                 if (gbl.verbose && (pctcount++ == onepct)) {
                         npct++;
                         pctcount = 0;
@@ -279,20 +292,44 @@ bbrot1(Pxbuf *pxbuf)
         free(buffer);
 }
 
-int
-main(int argc, char **argv)
+static const char *
+parse_args(int argc, char **argv)
 {
-        FILE *fp;
-        char *endptr;
-        int opt;
-        Pxbuf *pxbuf = NULL;
-        char *outfile = "buddhabrot1.bmp";
-        while ((opt = getopt(argc, argv, "HB:b:g:h:m:o:p:r:svw:")) != -1) {
+        static const struct option long_options[] = {
+                { "xline",          required_argument, NULL, 1 },
+                { "yline",          required_argument, NULL, 2 },
+                { "verbose",        no_argument,       NULL, 'v' },
+                { "bailout",        required_argument, NULL, 'b' },
+                { "help",           no_argument,       NULL, '?' },
+                { NULL,             0,                 NULL, 0 },
+        };
+        static const char *optstr = "HB:b:g:h:m:o:p:r:svw:";
+        const char *outfile = "buddhabrot1.bmp";
+
+        for (;;) {
+                char *endptr;
+                int option_index = 0;
+                int opt = getopt_long(argc, argv, optstr, long_options, &option_index);
+                if (opt == -1)
+                        break;
+
                 switch (opt) {
+                case 1:
+                        gbl.line_x = strtold(optarg, &endptr);
+                        if (endptr == optarg)
+                                bad_arg("--xline", optarg);
+                        gbl.use_line_x = true;
+                        break;
+                case 2:
+                        gbl.line_y = strtold(optarg, &endptr);
+                        if (endptr == optarg)
+                                bad_arg("--yline", optarg);
+                        gbl.use_line_y = true;
+                        break;
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-B --bailout", optarg);
                         gbl.bailsqu = gbl.bailout * gbl.bailout;
                         break;
                 case 'H':
@@ -301,22 +338,22 @@ main(int argc, char **argv)
                 case 'b':
                         gbl.n_blue = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-b (blue-channel iterations)", optarg);
                         break;
                 case 'g':
                         gbl.n_green = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-g (green-channel iterations", optarg);
                         break;
                 case 'h':
                         gbl.height = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-h (pixel height)", optarg);
                         break;
                 case 'm':
                         gbl.min = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-m (minimum iterations)", optarg);
                         break;
                 case 'o':
                         outfile = optarg;
@@ -324,12 +361,12 @@ main(int argc, char **argv)
                 case 'p':
                         gbl.points = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-p (no. of points)", optarg);
                         break;
                 case 'r':
                         gbl.n_red = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-r (red-channel iterations)", optarg);
                         break;
                 case 's':
                         gbl.singlechan = true;
@@ -340,25 +377,34 @@ main(int argc, char **argv)
                 case 'w':
                         gbl.width = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
-                                usage();
+                                bad_arg("-w (pixel width)", optarg);
                         break;
+                case '?':
                 default:
-                        usage();
+                        fprintf(stderr, "Unknown option -%c\n", opt);
+                        exit(EXIT_FAILURE);
                 }
         }
-
         /* One quick sanity check */
         if (gbl.min >= gbl.n_red) {
                 fprintf(stderr, "min too high!\n");
-                return 1;
+                exit(EXIT_FAILURE);
         }
 
         if (!gbl.singlechan && (gbl.min >= gbl.n_green || gbl.min >= gbl.n_blue)) {
                 fprintf(stderr, "min too high!\n");
-                return 1;
+                exit(EXIT_FAILURE);
         }
 
-        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
+        return outfile;
+}
+
+int
+main(int argc, char **argv)
+{
+        FILE *fp;
+        const char *outfile = parse_args(argc, argv);
+        Pxbuf *pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
         if (!pxbuf)
                 oom();
 
