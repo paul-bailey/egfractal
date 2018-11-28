@@ -298,6 +298,7 @@ main(int argc, char **argv)
                         usage();
                 }
         }
+
         gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
         if (!gbl.pxbuf)
                 oom();
@@ -316,7 +317,7 @@ main(int argc, char **argv)
         }
 
         if (print_palette_only)
-                print_palette();
+                print_palette_to_bmp();
         pxbuf_print(gbl.pxbuf, fp);
         fclose(fp);
         pxbuf_free(gbl.pxbuf);

@@ -23,7 +23,8 @@ extern struct gbl_t {
 } gbl;
 
 extern unsigned int get_color(mfloat_t idx, mfloat_t min, mfloat_t max);
-extern void print_palette(void);
+extern void print_palette_to_bmp(void);
+extern void print_palette_to_c(void);
 
 #endif /* MANDELBROT_COMMON_H */
 
