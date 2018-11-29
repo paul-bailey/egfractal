@@ -51,6 +51,7 @@ struct gbl_t gbl = {
         .distance_est   = false,
         .verbose        = false,
         .distance_root  = 0.25,
+        .negate         = false,
 };
 
 /* Initialized to log2l(2.0L) */
@@ -265,6 +266,8 @@ main(int argc, char **argv)
 
         if (optflags.print_palette)
                 print_palette_to_bmp(pxbuf);
+        if (gbl.negate)
+                pxbuf_negate(pxbuf);
         pxbuf_print(pxbuf, fp);
         fclose(fp);
         pxbuf_free(pxbuf);

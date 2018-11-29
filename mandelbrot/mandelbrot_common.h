@@ -51,6 +51,7 @@ extern struct gbl_t {
         unsigned int min_iteration;
         bool distance_est;
         bool verbose;
+        bool negate;
 } gbl;
 
 /* palette.c */
