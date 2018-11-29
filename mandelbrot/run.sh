@@ -1,6 +1,36 @@
 # TODO: These are all good coordinates but their properties need
 # tweaking to get the picture just right.
 
+have_answer=n
+echo
+echo "    ****WARNING!!****"
+echo
+while test ${have_answer} != y
+do
+   echo "This script takes a long time and it generates files that occupy"
+   echo "potentially gigabytes of disk space."
+   echo
+   echo "Continue? (y/n)"
+
+   read answer
+   case ${answer} in
+        Y | y | Yes | yes | YES)
+                have_answer=y
+                ;;
+        [Nn] | [Nn]o | NO)
+                echo
+                echo "Aborted by user"
+                exit 0
+                ;;
+        *)
+                echo
+                echo "You numbskull!!  You had just one job."
+                echo "Let's try this again."
+                echo
+                ;;
+    esac
+done
+
 # Favorites
 test -d mdb || mkdir mdb
 ./mandelbrot -b32768.0 -d1 -p1 -z0.0002 -x1.209 -y0.2385 -w6000 -h6000 -o mdb/mandelbrot-1a.bmp
