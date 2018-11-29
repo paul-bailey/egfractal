@@ -20,8 +20,6 @@ I added it to reduce confusion with other software
 with “fractal” in its name;
 it was not intended as some sort of impudent proprietary claim.
 
-:TODO: Add some example images.
-
 Licensing
 ---------
 
@@ -115,4 +113,38 @@ Using the Programs
 
 :TODO: Add ``man`` pages and mention them here.
 
+Gallery
+-------
 
+Buddhabrot Images
+~~~~~~~~~~~~~~~~~
+
+.. figure:: png/readme-1.png
+        :width: 3in
+
+        ``buddhabrot1 -p50000000 -w300 -h300``
+
+.. figure:: png/readme-2.png
+        :width: 3in
+
+        ``buddhabrot1 --xline 0.0 -w300 -h300 --equalize=20.0``
+
+.. figure:: png/readme-3.png
+        :width: 3in
+
+        ``buddhabrot1 --xline 0.1 -w300 -h300``
+
+.. figure:: png/readme-4.png
+        :width: 3in
+
+        ``buddhabrot1 --yline 0.1 -w300 -h300``
+
+.. figure:: png/readme-5.png
+        :width: 3in
+
+        ``buddhabrot1 --yline 0.1 -w300 -h300 --equalize=20.0``
+
+.. figure:: png/readme-6.png
+        :width: 3in
+
+        ``buddhabrot1 -s -r5000 -m4000 -w300 -h300 -p10000000 --equalize=10.0``
