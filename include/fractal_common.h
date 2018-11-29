@@ -27,6 +27,9 @@ enum {
         COLOR_YELLOW    = 0xffff00u,
         COLOR_WHITE     = 0xffffffu,
         COLOR_BLACK     = 0,
+
+        /* Non-standard colors I rather like */
+        COLOR_AMBER     = 0xe7b210u,
 };
 #define TO_RGB(r_, g_, b_)  (((r_) << 16) | ((g_) << 8) | (b_))
 extern unsigned char *pxbuf_rowptr(Pxbuf *pxbuf, unsigned int row);
