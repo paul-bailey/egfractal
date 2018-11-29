@@ -228,6 +228,11 @@ bbrot1(Pxbuf *pxbuf)
                 if (gbl.verbose && (pctcount++ == onepct)) {
                         npct++;
                         pctcount = 0;
+                        /*
+                         * Year 2018.  If your terminal doesn't support
+                         * ANSI escape sequences then you probably also
+                         * haven't upgraded to a horseless carriage.
+                         */
                         printf("\e[3D%3d", npct);
                         fflush(stdout);
                 }

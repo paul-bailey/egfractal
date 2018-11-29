@@ -148,3 +148,14 @@ Buddhabrot Images
         :width: 3in
 
         ``buddhabrot1 -s -r5000 -m4000 -w300 -h300 -p10000000 --equalize=10.0``
+
+.. figure:: png/readme-7.png
+        :width: 3in
+
+        ``buddhabrot1 -s -r5000 -m4000 -w300 -h300 -p10000000 --equalize=10.0 --negate``
+
+        Note that this image is *not* the exact color inverse of the previous.
+        That is because at this random-sample/pixel density,
+        the final generated image itself has a modicum of randomness too.
+
+        Unfortunately this randomness doesn't scale up very well.
