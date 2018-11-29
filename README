@@ -1,0 +1,118 @@
+.. -*- rst -*-
+
+.. : vim: set syntax=rst :
+
+=========
+egfractal
+=========
+
+--------------------------------------------------
+Command-line tools for auto-generating fractal art
+--------------------------------------------------
+
+:Author: Paul Bailey <roscidcup@falstaffandme.com>
+:Date: December 2018
+
+**egfractal** is my blanket term for source code I use
+for generating fractal art.
+The “eg” part stands for “evil genius.”
+I added it to reduce confusion with other software
+with “fractal” in its name;
+it was not intended as some sort of impudent proprietary claim.
+
+:TODO: Add some example images.
+
+Licensing
+---------
+
+See COPYING in this directory.
+
+Portability
+-----------
+
+I am making this public in the hopes that it may be useful,
+but since it works well enough on my systems
+(Ubuntu 18.04 and Cygwin on Windows 10)
+I do not test it much for portability.
+I try to make at least the C code be as generally POSIXive as possible,
+though I do use some Gnu-specifics like ``getopt_long`` and such.
+
+This was written in C because (1)
+I’m not some blockheaded Bracegirdle from Harbottle, and (2)
+some of the algorithms can be very very long,
+especially when generating Buddhabrot images.
+With even the fastest byte-code languages like Python
+you get something that feels like a cross between
+the DMV, a laundromat, and a movie’s underwater scene.
+You can feel the difference.
+Since **egfractal** programs
+only make system calls before and after the big algorithm
+(unless ``--verbose`` is used),
+and since it’s entirely single-threaded,
+Cygwin should be about the same as fast as other environments.
+(But because it dereferences hundreds of megabytes of memory,
+maybe not...
+if you know more about how Cygwin manages large address spaces than I do,
+edit this paragraph and send me a pull request.)
+
+This was not written for MSDN.
+Frankly I can’t even figure out
+how to create a new C-language project on MSDN anymore.
+(C++ is *not* C, you meathead!)
+
+System Requirements
+-------------------
+
+The main issue is RAM, which depends on the dimensions of the
+image you are generating.
+For example, in ``buddhabrot1``,
+each RGB channel has an array of ``unsigned long``’s whose length
+is the number of pixels,
+in addition to a similar array of ``long double``
+(quad double, depending on compiler),
+in addition to... a few other arrays.
+For a large 6000x6000 bitmap,
+a program could take up to two or three hundred megabytes of RAM.
+
+The second issue is speed.
+The **egfractal** programs are all single-threaded.
+The mandelbrot sets and julia sets shouldn’t take too long
+unless you are spelunking deep into the butt-crack
+of the cardioid, zoomed in so far that you need like a billion
+iterations per channel.
+Hats off to you.
+
+Building
+--------
+
+To create the ``configure`` script, you first need to run
+
+::
+
+        $ autoreconf -i
+
+This requires you to have **autotools** and **libtool**
+installed on your computer.
+After that, run the conventional chain of commands:
+
+::
+
+        $ ./configure # or "./configure --prefix=/your/preferred/path"
+        $ make
+
+Since you are building programs with simple names like ``mandelbrot``,
+``julia1``, etc.,
+which could cause namespace issues with other programs in your path
+that have the same name,
+I do NOT recommend using ``make install``.
+Instead just run the programs in the local directories using specified paths
+on the command line.
+
+:TODO: Rename these programs so this isn’t an issue.
+
+Using the Programs
+------------------
+
+:TODO: Add ``man`` pages and mention them here.
+
+
