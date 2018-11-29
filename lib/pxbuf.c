@@ -411,6 +411,15 @@ pxbuf_print(Pxbuf *pxbuf, FILE *fp)
         bmp_print(fp, pxbuf->buf, pxbuf->widthpx, pxbuf->heightpx, PXBUF_BPS);
 }
 
+void
+pxbuf_negate(Pxbuf *pxbuf)
+{
+        unsigned long i;
+
+        for (i = 0; i < pxbuf->bufsize; i++)
+                pxbuf->buf[i] = 255 - pxbuf->buf[i];
+}
+
 /* Equalize one RGB channel of pxbuf */
 static void
 pxbuf_eq_chan(Pxbuf *pxbuf, double exp, int chan, double maxl)

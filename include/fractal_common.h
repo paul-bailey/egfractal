@@ -76,6 +76,7 @@ extern void pxbuf_print(Pxbuf *pxbuf, FILE *fp);
 extern Pxbuf *pxbuf_create(int width, int height, unsigned int color);
 extern void pxbuf_free(Pxbuf *pxbuf);
 extern void pxbuf_eq(Pxbuf *pxbuf, double exp, bool preserve_color);
+extern void pxbuf_negate(Pxbuf *pxbuf);
 
 #endif /* FRACTAL_COMMON_H */
 

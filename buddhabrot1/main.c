@@ -58,6 +58,7 @@ static struct gbl_t {
         bool verbose;
         bool use_line_y;
         bool use_line_x;
+        bool negate;
 } gbl = {
         .n_red      = 5000,
         .n_green    = 500,
@@ -73,6 +74,7 @@ static struct gbl_t {
         .verbose    = false,
         .use_line_y = false,
         .use_line_x = false,
+        .negate     = false,
 };
 
 /* Error helpers */
@@ -268,6 +270,8 @@ bbrot1(Pxbuf *pxbuf)
         }
         if (gbl.do_hist)
                 pxbuf_eq(pxbuf, gbl.eq_exp, true);
+        if (gbl.negate)
+                pxbuf_negate(pxbuf);
         free(buffer);
 }
 
@@ -278,7 +282,8 @@ parse_args(int argc, char **argv)
                 { "xline",          required_argument, NULL, 1 },
                 { "yline",          required_argument, NULL, 2 },
                 { "equalize",       optional_argument, NULL, 3 },
-                { "histogram",      optional_argument, NULL, 4 },
+                { "histogram",      optional_argument, NULL, 3 },
+                { "negate",         no_argument,       NULL, 4 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
@@ -290,7 +295,6 @@ parse_args(int argc, char **argv)
         for (;;) {
                 char *endptr;
                 int option_index = 0;
-                int this_option_optind = optind ? optind : 1;
                 int opt = getopt_long(argc, argv, optstr, long_options, &option_index);
                 if (opt == -1)
                         break;
@@ -318,6 +322,9 @@ parse_args(int argc, char **argv)
                         } else {
                                 gbl.eq_exp = 5.0;
                         }
+                        break;
+                case 4:
+                        gbl.negate = true;
                         break;
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
