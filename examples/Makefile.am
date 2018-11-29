@@ -1,7 +1,7 @@
 examples_cppflags = -I$(top_srcdir)/include -Wall
 bin_PROGRAMS = \
-    koch
+    sierpinski
 LDADD = $(top_srcdir)/lib/libfractal.a
-koch_SOURCES = koch.c
-koch_CPPFLAGS = $(examples_cppflags)
+sierpinski_SOURCES = sierpinski.c
+sierpinski_CPPFLAGS = $(examples_cppflags)
 
