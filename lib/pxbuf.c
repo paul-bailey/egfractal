@@ -382,3 +382,114 @@ pxbuf_print(Pxbuf *pxbuf, FILE *fp)
         bmp_print(fp, pxbuf->buf, pxbuf->widthpx, pxbuf->heightpx, PXBUF_BPS);
 }
 
+/* Equalize one RGB channel of pxbuf */
+static void
+pxbuf_eq_chan(Pxbuf *pxbuf, double exp, int chan, double maxl)
+{
+        enum { HIST_SIZE = 256, };
+        /*
+         * XXX: Stack-heavy.
+         * Better to make it static?
+         * We don't care about context safety.
+         */
+        unsigned long histogram[HIST_SIZE];
+        unsigned long cdf[HIST_SIZE];
+        unsigned long cdfmax, cdfrange;
+        int row, col, i;
+
+        memset(histogram, 0, sizeof(histogram));
+        memset(cdf, 0, sizeof(cdf));
+
+        for (row = 0; row < pxbuf->heightpx; row++) {
+                for (col = 0; col < pxbuf->widthpx; col++) {
+                        unsigned char *p = pxbuf_colptr_safe(pxbuf, row, col) + chan;
+                        histogram[*p]++;
+                }
+        }
+
+        cdfmax = 0;
+        for (i = 0; i < HIST_SIZE; i++) {
+                cdfmax += histogram[i];
+                cdf[i] = cdfmax;
+        }
+
+        /* Slumpify to taste. */
+        for (i = 0; i < HIST_SIZE; i++) {
+                unsigned long long v = cdf[i];
+                v = (int)((double)cdfmax * pow((double)v / (double)cdfmax, exp));
+                cdf[i] = v;
+        }
+
+        cdfrange = cdfmax - cdf[0];
+        for (row = 0; row < pxbuf->heightpx; row++) {
+                for (col = 0; col < pxbuf->widthpx; col++) {
+                        unsigned char *p = pxbuf_colptr_safe(pxbuf, row, col) + chan;
+                        unsigned long v = *p;
+                        v = (cdf[v] - cdf[0]) * maxl / cdfrange;
+                        if (v > 255)
+                                v = 255;
+                        *p = v;
+                }
+        }
+}
+
+static unsigned int
+pxbuf_find_channel_ranges(Pxbuf *pxbuf, unsigned int min[3], unsigned int max[3])
+{
+        unsigned int row, col, chan, allmax;
+        max[0] = max[1] = max[2] = 0;
+        min[0] = min[1] = min[2] = 255;
+        for (row = 0; row < pxbuf->heightpx; row++) {
+                for (col = 0; col < pxbuf->widthpx; col++) {
+                        unsigned char *p = pxbuf_colptr_safe(pxbuf, row, col);
+                        for (chan = 0; chan < 3; chan++) {
+                                unsigned int v = p[chan];
+                                if (max[chan] < v)
+                                        max[chan] = v;
+                                if (min[chan] > v)
+                                        min[chan] = v;
+                        }
+                }
+        }
+
+        allmax = 0;
+        for (chan = 0; chan < 3; chan++) {
+                if (allmax < max[chan])
+                        allmax = max[chan];
+        }
+        return allmax;
+}
+
+/**
+ * pxbuf_eq - Equalize a bitmap
+ * @pxbuf: Handle to the bitmap
+ * @exp: Exponent of "bias".  That is, instead of making the cumulative
+ *       distribution function linear, make it exponential.  A linear
+ *       distribution of intentionally low-key images will be too bright.
+ * @preserve_color: True to maintain every pixel's color balance.  False
+ *       to equalize every color independently;
+ */
+void
+pxbuf_eq(Pxbuf *pxbuf, double exp, bool preserve_color)
+{
+        /*
+         * If different channels have different ranges, maintain those
+         * ranges by limiting what the "lesser" channel is normalized
+         * to, using max[].  This preserves the color balance.
+         */
+        int chan;
+        unsigned int max[3];
+        if (preserve_color) {
+                unsigned int min[3];
+                unsigned int allmax = pxbuf_find_channel_ranges(pxbuf, min, max);
+                for (chan = 0; chan < 3; chan++)
+                        max[chan] = (max[chan] * 256) / allmax;
+        } else {
+                max[0] = max[1] = max[2] = 256;
+        }
+
+        for (chan = 0; chan < 3; chan++)
+                pxbuf_eq_chan(pxbuf, exp, chan, max[chan]);
+}
+
+

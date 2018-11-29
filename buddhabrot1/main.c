@@ -136,50 +136,6 @@ normalize(unsigned long *buf, unsigned int npx, unsigned long new_max)
 }
 
 static void
-hist_eq(unsigned long *chanbuf, unsigned int npx)
-{
-        enum { HIST_SIZE = 256, };
-        static unsigned long long histogram[HIST_SIZE];
-        static unsigned long long cdf[HIST_SIZE];
-        static unsigned long cdfmax, cdfrange;
-        unsigned int i;
-
-        memset(histogram, 0, sizeof(histogram));
-        normalize(chanbuf, npx, HIST_SIZE-1);
-        for (i = 0; i < npx; i++) {
-                histogram[chanbuf[i]]++;
-        }
-
-
-        cdfmax = 0;
-        for (i = 0; i < HIST_SIZE; i++) {
-                cdfmax += histogram[i];
-                cdf[i] = cdfmax;
-        }
-
-        /*
-         * Slumpify, because a true equalization is too intense for the
-         * image that we expect.  Here we use the cuve of x^5 on [0, 1).
-         *
-         * XXX REVISIT: At this point, better to just use Photoshop
-         */
-        for (i = 0; i < HIST_SIZE; i++) {
-                unsigned long long v = cdf[i];
-                v = (int)((double)cdfmax * pow((double)v / (double)cdfmax, 5));
-                cdf[i] = v;
-        }
-
-        /*
-         * We just know there's going to be a lot of solid black pixels,
-         * so assume our minimum is zero (not even cdf[0]).
-         */
-        cdfrange = cdfmax;
-        for (i = 0; i < npx; i++) {
-                chanbuf[i] = (cdf[chanbuf[i]] - cdf[0]) * HIST_SIZE / cdfrange;
-        }
-}
-
-static void
 initialize_seeds(unsigned short seeds[6])
 {
         time_t t = time(NULL);
@@ -247,11 +203,8 @@ bbrot1(Pxbuf *pxbuf)
         if (gbl.verbose)
                 putchar('\n');
 
-        for (i = 0; i < nchan; i++) {
-                if (gbl.do_hist)
-                        hist_eq(chanbuf[i], npx);
+        for (i = 0; i < nchan; i++)
                 normalize(chanbuf[i], npx, 255);
-        }
 
         i = 0;
         for (row = 0; row < gbl.height; row++) {
@@ -281,6 +234,8 @@ bbrot1(Pxbuf *pxbuf)
                 }
 
         }
+        if (gbl.do_hist)
+                pxbuf_eq(pxbuf, 5.0, true);
         free(buffer);
 }
 
