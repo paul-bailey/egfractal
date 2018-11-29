@@ -20,6 +20,7 @@ static struct gbl_t {
         mfloat_t bailsqu;
         mfloat_t line_y;
         mfloat_t line_x;
+        double eq_exp;
         unsigned long points;
         bool singlechan;
         bool do_hist;
@@ -235,7 +236,7 @@ bbrot1(Pxbuf *pxbuf)
 
         }
         if (gbl.do_hist)
-                pxbuf_eq(pxbuf, 5.0, true);
+                pxbuf_eq(pxbuf, gbl.eq_exp, true);
         free(buffer);
 }
 
@@ -245,17 +246,20 @@ parse_args(int argc, char **argv)
         static const struct option long_options[] = {
                 { "xline",          required_argument, NULL, 1 },
                 { "yline",          required_argument, NULL, 2 },
+                { "equalize",       optional_argument, NULL, 3 },
+                { "histogram",      optional_argument, NULL, 4 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
                 { NULL,             0,                 NULL, 0 },
         };
-        static const char *optstr = "HB:b:g:h:m:o:p:r:svw:";
+        static const char *optstr = "B:b:g:h:m:o:p:r:svw:";
         const char *outfile = "buddhabrot1.bmp";
 
         for (;;) {
                 char *endptr;
                 int option_index = 0;
+                int this_option_optind = optind ? optind : 1;
                 int opt = getopt_long(argc, argv, optstr, long_options, &option_index);
                 if (opt == -1)
                         break;
@@ -273,14 +277,22 @@ parse_args(int argc, char **argv)
                                 bad_arg("--yline", optarg);
                         gbl.use_line_y = true;
                         break;
+                case 3:
+                        gbl.do_hist = true;
+                        /* FIXME: optarg is NULL whether there's an arg or not. */
+                        if (optarg != NULL) {
+                                gbl.eq_exp = strtold(optarg, &endptr);
+                                if (endptr == optarg)
+                                        bad_arg("--equalize,--histogram", optarg);
+                        } else {
+                                gbl.eq_exp = 5.0;
+                        }
+                        break;
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 bad_arg("-B --bailout", optarg);
                         gbl.bailsqu = gbl.bailout * gbl.bailout;
-                        break;
-                case 'H':
-                        gbl.do_hist = true;
                         break;
                 case 'b':
                         gbl.n_blue = strtoul(optarg, &endptr, 0);
@@ -332,6 +344,13 @@ parse_args(int argc, char **argv)
                         exit(EXIT_FAILURE);
                 }
         }
+
+        if (optind < argc) {
+                fprintf(stderr, "Excess arguments beginning with `%s'\n",
+                        argv[optind]);
+                exit(EXIT_FAILURE);
+        }
+
         /* One quick sanity check */
         if (gbl.min >= gbl.n_red) {
                 fprintf(stderr, "min too high!\n");
