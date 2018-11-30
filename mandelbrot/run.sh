@@ -1,6 +1,33 @@
 # TODO: These are all good coordinates but their properties need
 # tweaking to get the picture just right.
 
+generate_readmes=n
+case $1 in
+    readme)
+                generate_readmes=y
+                ;;
+         *)
+                ;;
+esac
+
+if test $generate_readmes = y
+then
+   ./mandelbrot -b16 -w300 -h300 -o readme-10.bmp -z0.0001  -d1 -p1 -x 1.2090000 -y0.2385000
+   ./mandelbrot -b16 -w300 -h300 -o readme-15.bmp -z1.0e-7  -d1 -p2 -x 1.2089925 -y0.2385097 -n1200
+   ./mandelbrot -b16 -w300 -h300 -o readme-16.bmp -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
+   ./mandelbrot -b16 -w300 -h300 -o readme-17.bmp -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
+   ./mandelbrot -b16 -w300 -h300 -o readme-18.bmp -z1.0e-4 -D  -x 0.7699100 -y 0.10949000
+   ./mandelbrot -b16 -w300 -h300 -o readme-19.bmp -z1.0e-6 -D  -x-0.25204350 -y 0.00014850 --negate
+   ./mandelbrot -b16 -w300 -h300 -o readme-20.bmp -z1.0e-6 -D  -x-0.25205250 -y 0.00014590 -n100000
+for i in `seq 10 20`
+do
+        fil=readme-${i}
+        test -f ${fil}.bmp && convert ${fil}.bmp ${fil}.png
+        test -f ${fil}.bmp && rm ${fil}.bmp
+done
+exit 0
+fi
+
 have_answer=n
 echo
 echo "    ****WARNING!!****"
