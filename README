@@ -121,22 +121,16 @@ Mandelbrot Images
 
 .. figure:: png/readme-10.png
         :width: 3in
-
 .. figure:: png/readme-15.png
         :width: 3in
-
 .. figure:: png/readme-16.png
         :width: 3in
-
 .. figure:: png/readme-17.png
         :width: 3in
-
 .. figure:: png/readme-18.png
         :width: 3in
-
 .. figure:: png/readme-19.png
         :width: 3in
-
 .. figure:: png/readme-20.png
         :width: 3in
 
@@ -147,7 +141,6 @@ Buddhabrot Images
         :width: 3in
 
         ``buddhabrot1 -p50000000 -w300 -h300``
-
 .. figure:: png/readme-2.png
         :width: 3in
 
@@ -157,7 +150,6 @@ Buddhabrot Images
         :width: 3in
 
         ``buddhabrot1 --xline 0.1 -w300 -h300``
-
 .. figure:: png/readme-4.png
         :width: 3in
 
