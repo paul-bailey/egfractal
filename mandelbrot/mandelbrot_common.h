@@ -34,7 +34,7 @@
 #include "fractal_common.h"
 
 typedef long double mfloat_t;
-typedef complex_t (*formula_t)(complex_t);
+typedef complex_t (*formula_t)(complex_t, complex_t);
 
 /* main.c */
 extern struct gbl_t {

@@ -1,12 +1,13 @@
 /*
  * mandelbrot_functions.c - alternative algorithms for a Mandelbrot set.
  *
- * Add the return values of these functions to c inside the
- * Mandelbrot iteration.  The more common "z * z" algorithm
- * is inlined in main.c rather put than here, to reduce
- * repetitive functional overhead in the iterative algorithm.
- * If you're using one of these then you should expect it to
+ * The more common "z * z + c" algorithm is inlined in main.c rather put
+ * here, to reduce repetitive functional overhead in the iterative
+ * algorithm.  If you're using one of these then you should expect it to
  * be slow, because you're asking for something special.
+ *
+ * FIXME: Most of these are not formulas meant to be iterated from z=0,
+ * because they return infinity upon the first test.
  *
  * Copyright (c) 2018, Paul Bailey
  * All rights reserved.
@@ -42,94 +43,94 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* TODO: These should go in library */
-static complex_t
-complex_sin(complex_t z)
-{
-        complex_t ret;
-        ret.re = sinl(z.re) * coshl(z.im);
-        ret.im = cosl(z.re) * sinhl(z.im);
-        return ret;
-}
-
-static complex_t
-complex_cos(complex_t z)
-{
-        complex_t ret;
-        ret.re = cosl(z.re) * coshl(z.im);
-        ret.im = sinl(z.re) * sinhl(z.im);
-        return ret;
-}
-
-static complex_t
-complex_inverse(complex_t z)
-{
-        complex_t ret;
-        mfloat_t m = complex_modulus2(z);
-        ret.re = z.re / m;
-        ret.im = -z.im / m;
-        return ret;
-}
-
-static complex_t
-complex_div(complex_t num, complex_t den)
-{
-        complex_t ret;
-        mfloat_t m = complex_modulus2(den);
-        ret.re = num.re * den.re / m;
-        ret.im = (num.im * den.re - num.re * den.im) / m;
-        return ret;
-}
-
-static complex_t
-sine_formula(complex_t z)
-{
-        return complex_sin(z);
-}
-
-static complex_t
-cosine_formula(complex_t z)
-{
-        return complex_cos(z);
-}
-
-/* returns "(1 - z * z) / (z - z * z cos(z))" */
 /*
+ * Return "(1 - z * z) / (z - z * z cos(z)) + c"
+ *
  * XXX: Too specific.
  * Allow an arg like "rat=1,2.4,7.6:0,0,12,2"
+ * Then build array and call complex_poly().
  */
 static complex_t
-rat2_formula(complex_t z)
+rat2_formula(complex_t z, complex_t c)
 {
+        static const mfloat_t ncoef[] = { 1.0, 0.0, -1.0 };
+        complex_t dcoef[] = { { 0.0, 0.0 }, { 1.0, 0.0 }, { 0.0, 0.0 } };
         complex_t num, den;
-        /* num = "1 - z^2" */
-        num = complex_addr(complex_mulr(complex_sq(z), -1), 1);
 
-        /* "z^2 cos(z)" */
-        den = complex_mul(complex_cos(z), complex_sq(z));
-        /* "z - z^2 cos(z)" */
-        den = complex_add(z, complex_mulr(den, -1));
+        dcoef[2] = complex_neg(complex_cos(z));
+        num = complex_poly(z, ncoef, 2);
+        den = complex_cpoly(z, dcoef, 2);
+        return complex_add(c, complex_div(num, den));
+}
 
-        if (1)
-                return complex_div(num, den);
-        else
-                return complex_mul(num, complex_inverse(den));
+static complex_t
+rat_ab_helper(complex_t z, complex_t a, complex_t b)
+{
+        /*
+         * FIXME: This was taken from something that surely is wrong.
+         * When z starts at 0, the very first answer will have already
+         * diverged to infinity.
+         */
+        complex_t ret = complex_add(complex_inverse(z), complex_add(z, b));
+        return complex_div(ret, a);
+}
+
+static complex_t rat_r, rat_s;
+
+/* c is on the A plane */
+static complex_t
+rata_formula(complex_t z, complex_t c)
+{
+        complex_t b = complex_add(complex_mul(rat_r, c), rat_s);
+        return rat_ab_helper(z, c, b);
+}
+
+/* c is on the B plane */
+static complex_t
+ratb_formula(complex_t z, complex_t c)
+{
+        complex_t a = complex_add(complex_mul(rat_r, c), rat_s);
+        return rat_ab_helper(z, a, c);
 }
 
 static int pow_exp = 1;
 static complex_t
-pow_formula(complex_t z)
+pow_formula(complex_t z, complex_t c)
 {
-        return complex_pow(z, pow_exp);
+        return complex_add(c, complex_pow(z, pow_exp));
 }
+
+static complex_t
+sine_formula(complex_t z, complex_t c)
+{
+        return complex_add(c, complex_sin(z));
+}
+
+static complex_t
+cosine_formula(complex_t z, complex_t c)
+{
+        return complex_add(c, complex_cos(z));
+}
+
+#undef CMPLX
+#define CMPLX(re_, im_)  { .re = (re_), .im = (im_) }
+
+#define RSREAL(r_, s_) .r = CMPLX(r_, 0.0), .s = CMPLX(s_, 0.0)
 
 static const struct lut_t {
         const char *name;
         formula_t fn;
+        complex_t r;
+        complex_t s;
 } lut[] = {
-        { "sin", sine_formula },
-        { "cos", cosine_formula },
-        { "rat2", rat2_formula },
+        { "sin",      sine_formula,   RSREAL(0.0, 0.0) },
+        { "cos",      cosine_formula, RSREAL(0.0, 0.0) },
+        { "rat2",     rat2_formula,   RSREAL(0.0, 0.0) },
+        { "snowshoe", rata_formula,   RSREAL(-1.0, -2.0) },
+        { "spyglass", rata_formula,   .r = CMPLX(-1.0, 0.4), .s = CMPLX(2.0,  0.0) },
+        { "tie",      ratb_formula,   .r = CMPLX(-1.0, 0.0), .s = CMPLX(0.0,  200.0) },
+        { "standard", rata_formula,   RSREAL(-1.0, 2.0) },
+        { "clot",     rata_formula,   RSREAL(0.0, 0.0) },
         { NULL, NULL },
 };
 
@@ -149,8 +150,11 @@ parse_formula(const char *name)
 
         }
         for (t = lut; t->name != NULL; t++) {
-                if (!strcmp(t->name, name))
+                if (!strcmp(t->name, name)) {
+                        rat_r = t->r;
+                        rat_s = t->s;
                         return t->fn;
+                }
         }
         return NULL;
 }

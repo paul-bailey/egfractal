@@ -95,13 +95,16 @@ iterate_normal(complex_t c)
          */
         if (gbl.formula) {
                 for (i = 0; i < n; i++) {
-                        /* new z = z^2 + c */
-                        complex_t ztmp = complex_add(gbl.formula(z), c);
+                        complex_t ztmp = gbl.formula(z, c);
                         /* Too precise for our data types. Assume inside. */
                         if (ztmp.re == z.re && ztmp.im == z.im)
                                 return INSIDE;
-                        if (complex_modulus2(ztmp) > gbl.bailoutsqu)
+
+                        if (!complex_isfinite(ztmp)
+                            || complex_modulus2(ztmp) > gbl.bailoutsqu) {
                                 break;
+                        }
+
                         z = ztmp;
                 }
         } else {
@@ -116,7 +119,6 @@ iterate_normal(complex_t c)
                         z = ztmp;
                 }
         }
-
         if (i == n)
                 return INSIDE;
 
@@ -163,7 +165,9 @@ iterate_distance(complex_t c)
         if (gbl.formula) {
                 for (i = 0; i < n; i++) {
                         /* use different formula than our usual */
-                        complex_t ztmp = complex_add(gbl.formula(z), c);
+                        complex_t ztmp = gbl.formula(z, c);
+                        if (!complex_isfinite(ztmp))
+                                break;
                         dz = complex_mul(z, dz);
                         dz = complex_mulr(dz, 2.0L);
                         dz = complex_addr(dz, 1.0L);

@@ -37,6 +37,7 @@
 #define COMPLEX_HELPERS_H
 
 #include <math.h>
+#include <stdbool.h>
 
 /* TODO: Some CLEAN way of making this a program-by-program option */
 typedef long double mfloat_t;
@@ -85,27 +86,33 @@ static inline complex_t complex_add(complex_t a, complex_t b)
 }
 
 /* Add a real number to a complex number */
-static inline complex_t complex_addr(complex_t c, long double re)
+static inline complex_t complex_addr(complex_t c, mfloat_t re)
 {
         c.re += re;
         return c;
 }
 
 /* Multiply a complex number to a real number. */
-static inline complex_t complex_mulr(complex_t c, long double re)
+static inline complex_t complex_mulr(complex_t c, mfloat_t re)
 {
         c.re *= re;
         c.im *= re;
         return c;
 }
 
-/* Return an integer power of a complex number. */
-static inline complex_t complex_pow(complex_t c, int pow)
-{
-        complex_t ret = c;
-        while (pow-- > 1)
-                ret = complex_mul(ret, c);
-        return ret;
-}
+static inline complex_t complex_neg(complex_t c)
+        { return complex_mulr(c, -1.0); }
+
+static inline bool complex_isfinite(complex_t c)
+        { return isfinite(c.re) && isfinite(c.im); }
+
+/* complex.c */
+extern complex_t complex_pow(complex_t c, int pow);
+extern complex_t complex_poly(complex_t c, const mfloat_t *coef, int order);
+extern complex_t complex_cpoly(complex_t c, const complex_t *coef, int order);
+extern complex_t complex_div(complex_t num, complex_t den);
+extern complex_t complex_inverse(complex_t c);
+extern complex_t complex_cos(complex_t c);
+extern complex_t complex_sin(complex_t c);
 
 #endif /* COMPLEX_HELPERS_H */
