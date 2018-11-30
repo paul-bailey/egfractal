@@ -46,112 +46,112 @@
 static complex_t
 complex_sin(complex_t z)
 {
-	complex_t ret;
-	ret.re = sinl(z.re) * coshl(z.im);
-	ret.im = cosl(z.re) * sinhl(z.im);
-	return ret;
+        complex_t ret;
+        ret.re = sinl(z.re) * coshl(z.im);
+        ret.im = cosl(z.re) * sinhl(z.im);
+        return ret;
 }
 
 static complex_t
 complex_cos(complex_t z)
 {
-	complex_t ret;
-	ret.re = cosl(z.re) * coshl(z.im);
-	ret.im = sinl(z.re) * sinhl(z.im);
-	return ret;
+        complex_t ret;
+        ret.re = cosl(z.re) * coshl(z.im);
+        ret.im = sinl(z.re) * sinhl(z.im);
+        return ret;
 }
 
 static complex_t
 complex_inverse(complex_t z)
 {
-	complex_t ret;
-	mfloat_t m = complex_modulus2(z);
-	ret.re = z.re / m;
-	ret.im = -z.im / m;
-	return ret;
+        complex_t ret;
+        mfloat_t m = complex_modulus2(z);
+        ret.re = z.re / m;
+        ret.im = -z.im / m;
+        return ret;
 }
 
 static complex_t
 complex_div(complex_t num, complex_t den)
 {
-	complex_t ret;
-	mfloat_t m = complex_modulus2(den);
-	ret.re = num.re * den.re / m;
-	ret.im = (num.im * den.re - num.re * den.im) / m;
-	return ret;
+        complex_t ret;
+        mfloat_t m = complex_modulus2(den);
+        ret.re = num.re * den.re / m;
+        ret.im = (num.im * den.re - num.re * den.im) / m;
+        return ret;
 }
 
 static complex_t
 sine_formula(complex_t z)
 {
-	return complex_sin(z);
+        return complex_sin(z);
 }
 
 static complex_t
 cosine_formula(complex_t z)
 {
-	return complex_cos(z);
+        return complex_cos(z);
 }
 
 /* returns "(1 - z * z) / (z - z * z cos(z))" */
-/* 
- * XXX: Too specific.  
+/*
+ * XXX: Too specific.
  * Allow an arg like "rat=1,2.4,7.6:0,0,12,2"
  */
 static complex_t
 rat2_formula(complex_t z)
 {
-	complex_t num, den;
-	/* num = "1 - z^2" */
-	num = complex_addr(complex_mulr(complex_sq(z), -1), 1);
+        complex_t num, den;
+        /* num = "1 - z^2" */
+        num = complex_addr(complex_mulr(complex_sq(z), -1), 1);
 
-	/* "z^2 cos(z)" */
-	den = complex_mul(complex_cos(z), complex_sq(z));
-	/* "z - z^2 cos(z)" */
-	den = complex_add(z, complex_mulr(den, -1));
+        /* "z^2 cos(z)" */
+        den = complex_mul(complex_cos(z), complex_sq(z));
+        /* "z - z^2 cos(z)" */
+        den = complex_add(z, complex_mulr(den, -1));
 
-	if (1)
-		return complex_div(num, den);
-	else
-		return complex_mul(num, complex_inverse(den));
+        if (1)
+                return complex_div(num, den);
+        else
+                return complex_mul(num, complex_inverse(den));
 }
 
 static int pow_exp = 1;
 static complex_t
 pow_formula(complex_t z)
 {
-	return complex_pow(z, pow_exp);
+        return complex_pow(z, pow_exp);
 }
 
 static const struct lut_t {
-	const char *name;
-	formula_t fn;
+        const char *name;
+        formula_t fn;
 } lut[] = {
-	{ "sin", sine_formula },
-	{ "cos", cosine_formula },
-	{ "rat2", rat2_formula },
-	{ NULL, NULL },
+        { "sin", sine_formula },
+        { "cos", cosine_formula },
+        { "rat2", rat2_formula },
+        { NULL, NULL },
 };
 
 formula_t
 parse_formula(const char *name)
 {
-	const struct lut_t *t;
-	if (!strncmp(name, "pow", 3)) {
-		char *endptr;
-		double exp;
-		name += 3;
-		exp = strtod(name, &endptr);
-		if (endptr == name)
-			return NULL;
-		pow_exp = exp;
-		return pow_formula;
+        const struct lut_t *t;
+        if (!strncmp(name, "pow", 3)) {
+                char *endptr;
+                double exp;
+                name += 3;
+                exp = strtod(name, &endptr);
+                if (endptr == name)
+                        return NULL;
+                pow_exp = exp;
+                return pow_formula;
 
-	}
-	for (t = lut; t->name != NULL; t++) {
-		if (!strcmp(t->name, name))
-			return t->fn;
-	}
-	return NULL;
+        }
+        for (t = lut; t->name != NULL; t++) {
+                if (!strcmp(t->name, name))
+                        return t->fn;
+        }
+        return NULL;
 }
 

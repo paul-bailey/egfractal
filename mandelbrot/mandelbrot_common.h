@@ -53,7 +53,7 @@ extern struct gbl_t {
         bool distance_est;
         bool verbose;
         bool negate;
-	formula_t formula;
+        formula_t formula;
 } gbl;
 
 /* palette.c */

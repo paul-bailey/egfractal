@@ -52,7 +52,7 @@ struct gbl_t gbl = {
         .verbose        = false,
         .distance_root  = 0.25,
         .negate         = false,
-	.formula	= NULL,
+        .formula        = NULL,
 };
 
 /* Initialized to log2l(2.0L) */
@@ -88,11 +88,11 @@ iterate_normal(complex_t c)
         unsigned long i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
 
-	/* 
-	 * This is an ugly D.R.Y. violation,
-	 * but it keeps our normal algorithm
-	 * much faster.
-	 */
+        /*
+         * This is an ugly D.R.Y. violation,
+         * but it keeps our normal algorithm
+         * much faster.
+         */
         if (gbl.formula) {
                 for (i = 0; i < n; i++) {
                         /* new z = z^2 + c */
@@ -125,7 +125,7 @@ iterate_normal(complex_t c)
         if (gbl.dither > 0) {
                 if (!!(gbl.dither & 01)) {
                         /* Smooth with distance estimate */
-			/* FIXME: No longer true if gbl.formula != NULL */
+                        /* FIXME: No longer true if gbl.formula != NULL */
                         mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0L;
                         mfloat_t nu = logl(log_zn / log_2) / log_2;
                         if (isfinite(log_zn) && isfinite(nu))
@@ -160,7 +160,7 @@ iterate_distance(complex_t c)
         unsigned long i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
         complex_t dz = { .re = 1.0L, .im = 0.0L };
-	if (gbl.formula) {
+        if (gbl.formula) {
                 for (i = 0; i < n; i++) {
                         /* use different formula than our usual */
                         complex_t ztmp = complex_add(gbl.formula(z), c);
@@ -172,7 +172,7 @@ iterate_distance(complex_t c)
                         if (complex_modulus2(z) > gbl.bailoutsqu)
                                 break;
                 }
-	} else {
+        } else {
                 for (i = 0; i < n; i++) {
                         /* "z = z^2 + c" and "dz = 2.0 * z * dz + 1.0" */
                         complex_t ztmp = complex_add(complex_sq(z), c);
@@ -187,7 +187,7 @@ iterate_distance(complex_t c)
         }
 
         /* Return distance normalized to the colorspace */
-	/* XXX: This is no longer true if gbl.formula != NULL */
+        /* XXX: This is no longer true if gbl.formula != NULL */
         return complex_modulus(z) * logl(complex_modulus(z)) / complex_modulus(dz);
 }
 
