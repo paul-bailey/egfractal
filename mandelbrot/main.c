@@ -52,6 +52,7 @@ struct gbl_t gbl = {
         .verbose        = false,
         .distance_root  = 0.25,
         .negate         = false,
+	.formula	= NULL,
 };
 
 /* Initialized to log2l(2.0L) */
@@ -87,15 +88,33 @@ iterate_normal(complex_t c)
         unsigned long i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
 
-        for (i = 0; i < n; i++) {
-                /* new z = z^2 + c */
-                complex_t ztmp = complex_add(complex_sq(z), c);
-                /* Too precise for our data types. Assume inside. */
-                if (ztmp.re == z.re && ztmp.im == z.im)
-                        return INSIDE;
-                if (complex_modulus2(ztmp) > gbl.bailoutsqu)
-                        break;
-                z = ztmp;
+	/* 
+	 * This is an ugly D.R.Y. violation,
+	 * but it keeps our normal algorithm
+	 * much faster.
+	 */
+        if (gbl.formula) {
+                for (i = 0; i < n; i++) {
+                        /* new z = z^2 + c */
+                        complex_t ztmp = complex_add(gbl.formula(z), c);
+                        /* Too precise for our data types. Assume inside. */
+                        if (ztmp.re == z.re && ztmp.im == z.im)
+                                return INSIDE;
+                        if (complex_modulus2(ztmp) > gbl.bailoutsqu)
+                                break;
+                        z = ztmp;
+                }
+        } else {
+                for (i = 0; i < n; i++) {
+                        /* new z = z^2 + c */
+                        complex_t ztmp = complex_add(complex_sq(z), c);
+                        /* Too precise for our data types. Assume inside. */
+                        if (ztmp.re == z.re && ztmp.im == z.im)
+                                return INSIDE;
+                        if (complex_modulus2(ztmp) > gbl.bailoutsqu)
+                                break;
+                        z = ztmp;
+                }
         }
 
         if (i == n)
@@ -106,6 +125,7 @@ iterate_normal(complex_t c)
         if (gbl.dither > 0) {
                 if (!!(gbl.dither & 01)) {
                         /* Smooth with distance estimate */
+			/* FIXME: No longer true if gbl.formula != NULL */
                         mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0L;
                         mfloat_t nu = logl(log_zn / log_2) / log_2;
                         if (isfinite(log_zn) && isfinite(nu))
@@ -140,19 +160,34 @@ iterate_distance(complex_t c)
         unsigned long i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
         complex_t dz = { .re = 1.0L, .im = 0.0L };
-        for (i = 0; i < n; i++) {
-                /* "z = z^2 + c" and "dz = 2.0 * z * dz + 1.0" */
-                complex_t ztmp = complex_add(complex_sq(z), c);
-                dz = complex_mul(z, dz);
-                dz = complex_mulr(dz, 2.0L);
-                dz = complex_addr(dz, 1.0L);
-                z.re = ztmp.re;
-                z.im = ztmp.im;
-                if (complex_modulus2(z) > gbl.bailoutsqu)
-                        break;
+	if (gbl.formula) {
+                for (i = 0; i < n; i++) {
+                        /* use different formula than our usual */
+                        complex_t ztmp = complex_add(gbl.formula(z), c);
+                        dz = complex_mul(z, dz);
+                        dz = complex_mulr(dz, 2.0L);
+                        dz = complex_addr(dz, 1.0L);
+                        z.re = ztmp.re;
+                        z.im = ztmp.im;
+                        if (complex_modulus2(z) > gbl.bailoutsqu)
+                                break;
+                }
+	} else {
+                for (i = 0; i < n; i++) {
+                        /* "z = z^2 + c" and "dz = 2.0 * z * dz + 1.0" */
+                        complex_t ztmp = complex_add(complex_sq(z), c);
+                        dz = complex_mul(z, dz);
+                        dz = complex_mulr(dz, 2.0L);
+                        dz = complex_addr(dz, 1.0L);
+                        z.re = ztmp.re;
+                        z.im = ztmp.im;
+                        if (complex_modulus2(z) > gbl.bailoutsqu)
+                                break;
+                }
         }
 
         /* Return distance normalized to the colorspace */
+	/* XXX: This is no longer true if gbl.formula != NULL */
         return complex_modulus(z) * logl(complex_modulus(z)) / complex_modulus(dz);
 }
 
@@ -163,7 +198,7 @@ mandelbrot_px(int row, int col)
         enum { THRESHOLD = 10 };
 
         complex_t c = xy_to_complex(row, col);
-        if (gbl.n_iteration > THRESHOLD) {
+        if (!gbl.formula && gbl.n_iteration > THRESHOLD) {
                 /*
                  * We know the formula for the main cardioid and bulb,
                  * and we know every point inside will converge.  So we
