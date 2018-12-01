@@ -161,24 +161,18 @@ iterate_distance(complex_t c)
         unsigned long i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
         complex_t dz = { .re = 1.0L, .im = 0.0L };
+        mfloat_t zmod;
         if (gbl.formula) {
                 for (i = 0; i < n; i++) {
                         /* use different formula than our usual */
                         complex_t ztmp = gbl.formula(z, c);
                         if (!complex_isfinite(ztmp))
                                 break;
-                        /*
-                         * TODO: This is now wrong.
-                         * We need a function that will
-                         * take the derivative of our selected formula.
-                         * For power polynomials this is easy, but we should
-                         * have a gbl.dformula() or something.
-                         */
-                        dz = complex_mul(z, dz);
-                        dz = complex_mulr(dz, 2.0L);
+
+                        /* "dz = f'(z)*dz + 1.0" */
+                        dz = complex_mul(dz, gbl.dformula(z, c));
                         dz = complex_addr(dz, 1.0L);
-                        z.re = ztmp.re;
-                        z.im = ztmp.im;
+                        z = ztmp;
                         if (complex_modulus2(z) > gbl.bailoutsqu)
                                 break;
                 }
@@ -189,15 +183,13 @@ iterate_distance(complex_t c)
                         dz = complex_mul(z, dz);
                         dz = complex_mulr(dz, 2.0L);
                         dz = complex_addr(dz, 1.0L);
-                        z.re = ztmp.re;
-                        z.im = ztmp.im;
+                        z = ztmp;
                         if (complex_modulus2(z) > gbl.bailoutsqu)
                                 break;
                 }
         }
-
-        /* XXX: This is no longer true if gbl.formula != NULL */
-        return complex_modulus(z) * logl(complex_modulus(z)) / complex_modulus(dz);
+        zmod = complex_modulus(z);
+        return zmod * logl(zmod) / complex_modulus(dz);
 }
 
 static mfloat_t

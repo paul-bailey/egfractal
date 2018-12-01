@@ -83,8 +83,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         gbl.negate = true;
                         break;
 		case 3:
-			gbl.formula = parse_formula(optarg);
-			if (!gbl.formula)
+			if (parse_formula(optarg) < 0)
 				bad_arg("--formula", optarg);
 			break;
                 case 'D':

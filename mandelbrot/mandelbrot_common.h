@@ -34,7 +34,6 @@
 #include "fractal_common.h"
 
 typedef long double mfloat_t;
-typedef complex_t (*formula_t)(complex_t, complex_t);
 
 /* main.c */
 extern struct gbl_t {
@@ -54,7 +53,8 @@ extern struct gbl_t {
         bool distance_est;
         bool verbose;
         bool negate;
-        formula_t formula;
+        complex_t (*formula)(complex_t, complex_t);
+        complex_t (*dformula)(complex_t, complex_t);
 } gbl;
 
 /* palette.c */
@@ -69,7 +69,7 @@ struct optflags_t {
 extern void parse_args(int argc, char **argv, struct optflags_t *optflags);
 
 /* mandelbrot_functions.c */
-formula_t parse_formula(const char *name);
+int parse_formula(const char *name);
 
 #endif /* MANDELBROT_COMMON_H */
 

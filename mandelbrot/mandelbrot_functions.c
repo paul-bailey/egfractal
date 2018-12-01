@@ -43,6 +43,54 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* TODO: Remove this if I don't get rata, ratb formulae working */
+static complex_t rat_r, rat_s;
+
+static int pow_exp = 1;
+static complex_t
+pow_formula(complex_t z, complex_t c)
+{
+        return complex_add(c, complex_pow(z, pow_exp));
+}
+
+static complex_t
+pow_dformula(complex_t z, complex_t c)
+{
+        if (pow_exp == 0) {
+                complex_t ret = { 0.0, 0 };
+                return ret;
+        }
+        return complex_mulr(complex_pow(z, pow_exp - 1), pow_exp);
+}
+
+static complex_t
+sine_formula(complex_t z, complex_t c)
+{
+        return complex_add(c, complex_sin(z));
+}
+
+static complex_t
+cosine_formula(complex_t z, complex_t c)
+{
+        return complex_add(c, complex_cos(z));
+}
+
+static complex_t
+cosine_dformula(complex_t z, complex_t c)
+{
+        /* d/dx cos(x) = -sin(x) */
+        return complex_neg(complex_sin(z));
+}
+
+static complex_t
+sine_dformula(complex_t z, complex_t c)
+{
+        /* d/dx sin(x) = cos(x) */
+        return complex_cos(z);
+}
+
+/* TODO: Make all this crap below work */
+#if 0
 /*
  * Return "(1 - z * z) / (z - z * z cos(z)) + c"
  *
@@ -75,7 +123,6 @@ rat_ab_helper(complex_t z, complex_t a, complex_t b)
         return complex_div(ret, a);
 }
 
-static complex_t rat_r, rat_s;
 
 /* c is on the A plane */
 static complex_t
@@ -92,49 +139,34 @@ ratb_formula(complex_t z, complex_t c)
         complex_t a = complex_add(complex_mul(rat_r, c), rat_s);
         return rat_ab_helper(z, a, c);
 }
-
-static int pow_exp = 1;
-static complex_t
-pow_formula(complex_t z, complex_t c)
-{
-        return complex_add(c, complex_pow(z, pow_exp));
-}
-
-static complex_t
-sine_formula(complex_t z, complex_t c)
-{
-        return complex_add(c, complex_sin(z));
-}
-
-static complex_t
-cosine_formula(complex_t z, complex_t c)
-{
-        return complex_add(c, complex_cos(z));
-}
+#endif
 
 #undef CMPLX
 #define CMPLX(re_, im_)  { .re = (re_), .im = (im_) }
 
 #define RSREAL(r_, s_) .r = CMPLX(r_, 0.0), .s = CMPLX(s_, 0.0)
+#define FML(name_)      .fn = name_##_formula, .dfn = name_##_dformula
 
 static const struct lut_t {
         const char *name;
-        formula_t fn;
+        complex_t (*fn)(complex_t, complex_t);
+        complex_t (*dfn)(complex_t, complex_t);
         complex_t r;
         complex_t s;
 } lut[] = {
-        { "sin",      sine_formula,   RSREAL(0.0, 0.0) },
-        { "cos",      cosine_formula, RSREAL(0.0, 0.0) },
-        { "rat2",     rat2_formula,   RSREAL(0.0, 0.0) },
-        { "snowshoe", rata_formula,   RSREAL(-1.0, -2.0) },
-        { "spyglass", rata_formula,   .r = CMPLX(-1.0, 0.4), .s = CMPLX(2.0,  0.0) },
-        { "tie",      ratb_formula,   .r = CMPLX(-1.0, 0.0), .s = CMPLX(0.0,  200.0) },
-        { "standard", rata_formula,   RSREAL(-1.0, 2.0) },
-        { "clot",     rata_formula,   RSREAL(0.0, 0.0) },
+        { "sin",      FML(sine),   RSREAL(0.0, 0.0) },
+        { "cos",      FML(cosine), RSREAL(0.0, 0.0) },
+#if 0
+        { "rat2",     FML(rat2),   RSREAL(0.0, 0.0) },
+        { "snowshoe", FML(rata),   RSREAL(-1.0, -2.0) },
+        { "spyglass", FML(rata),   .r = CMPLX(-1.0, 0.4), .s = CMPLX(2.0,  0.0) },
+        { "tie",      FML(ratb),   .r = CMPLX(-1.0, 0.0), .s = CMPLX(0.0,  200.0) },
+        { "standard", FML(rata),   RSREAL(-1.0, 2.0) },
+        { "clot",     FML(rata),   RSREAL(0.0, 0.0) },
+#endif
         { NULL, NULL },
 };
-
-formula_t
+int
 parse_formula(const char *name)
 {
         const struct lut_t *t;
@@ -144,10 +176,12 @@ parse_formula(const char *name)
                 name += 3;
                 exp = strtod(name, &endptr);
                 if (endptr == name)
-                        return NULL;
+                        return -1;
                 pow_exp = exp;
                 gbl.log_d = logl((long double)exp);
-                return pow_formula;
+                gbl.formula = pow_formula;
+		gbl.dformula = pow_dformula;
+		return 0;
 
         }
 
@@ -155,9 +189,12 @@ parse_formula(const char *name)
                 if (!strcmp(t->name, name)) {
                         rat_r = t->r;
                         rat_s = t->s;
-                        return t->fn;
+                        gbl.formula = t->fn;
+                        gbl.dformula = t->dfn;
+                        return 0;
                 }
         }
-        return NULL;
+
+        return -1;
 }
 
