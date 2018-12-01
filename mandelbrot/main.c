@@ -53,10 +53,9 @@ struct gbl_t gbl = {
         .distance_root  = 0.25,
         .negate         = false,
         .formula        = NULL,
+        .log_d          = 0.0,
 };
 
-/* Initialized to log2l(2.0L) */
-static mfloat_t log_2;
 static const mfloat_t INSIDE = -1.0L;
 
 static void
@@ -129,7 +128,7 @@ iterate_normal(complex_t c)
                         /* Smooth with distance estimate */
                         /* FIXME: No longer true if gbl.formula != NULL */
                         mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0L;
-                        mfloat_t nu = logl(log_zn / log_2) / log_2;
+                        mfloat_t nu = logl(log_zn / gbl.log_d) / gbl.log_d;
                         if (isfinite(log_zn) && isfinite(nu))
                                 ret += 1.0L - nu;
                         /* if not finite, can't smooth with distance est. */
@@ -168,6 +167,13 @@ iterate_distance(complex_t c)
                         complex_t ztmp = gbl.formula(z, c);
                         if (!complex_isfinite(ztmp))
                                 break;
+                        /*
+                         * TODO: This is now wrong.
+                         * We need a function that will
+                         * take the derivative of our selected formula.
+                         * For power polynomials this is easy, but we should
+                         * have a gbl.dformula() or something.
+                         */
                         dz = complex_mul(z, dz);
                         dz = complex_mulr(dz, 2.0L);
                         dz = complex_addr(dz, 1.0L);
@@ -190,7 +196,6 @@ iterate_distance(complex_t c)
                 }
         }
 
-        /* Return distance normalized to the colorspace */
         /* XXX: This is no longer true if gbl.formula != NULL */
         return complex_modulus(z) * logl(complex_modulus(z)) / complex_modulus(dz);
 }
@@ -281,7 +286,7 @@ main(int argc, char **argv)
         FILE *fp;
 
         /* need to set these "consts" first */
-        log_2 = logl(2.0L);
+        gbl.log_d = logl(2.0L);
 
         parse_args(argc, argv, &optflags);
 

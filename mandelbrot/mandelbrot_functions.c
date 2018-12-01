@@ -146,9 +146,11 @@ parse_formula(const char *name)
                 if (endptr == name)
                         return NULL;
                 pow_exp = exp;
+                gbl.log_d = logl((long double)exp);
                 return pow_formula;
 
         }
+
         for (t = lut; t->name != NULL; t++) {
                 if (!strcmp(t->name, name)) {
                         rat_r = t->r;
