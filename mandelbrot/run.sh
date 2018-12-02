@@ -38,7 +38,9 @@ fi
 ./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-08.bmp -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
 ./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-09.bmp -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
 ./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-10.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --distance-root 6
-./mandelbrot -b65536 -w3000 -h3000 -o mandelbrot-favorites-11.bmp -z4 -D --formula sin --distance-root 8
+# The above competes with this interesting one.
+./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-11.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
+./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-12.bmp -z4 -D --formula sin --distance-root 8 --color-distance -p4
 
 
 # Old favorites, some were picked out and added to above

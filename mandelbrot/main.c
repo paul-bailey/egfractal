@@ -50,6 +50,7 @@ struct gbl_t gbl = {
         .min_iteration  = 0,
         .distance_est   = false,
         .verbose        = false,
+        .color_distance = false,
         .distance_root  = 0.25,
         .negate         = false,
         .formula        = NULL,
@@ -197,6 +198,7 @@ mandelbrot_px(int row, int col)
 {
         /* XXX: Quite an arbitrary choice */
         enum { THRESHOLD = 10 };
+        mfloat_t ret;
 
         complex_t c = xy_to_complex(row, col);
         if (!gbl.formula && gbl.n_iteration > THRESHOLD) {
@@ -216,10 +218,10 @@ mandelbrot_px(int row, int col)
                         return INSIDE;
         }
 
-        if (gbl.distance_est)
-                return iterate_distance(c);
-        else
-                return iterate_normal(c);
+        ret = gbl.distance_est ? iterate_distance(c) : iterate_normal(c);
+        if (!isfinite(ret))
+                ret = INSIDE;
+        return ret;
 }
 
 static void

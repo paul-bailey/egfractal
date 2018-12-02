@@ -49,6 +49,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 { "distance-root",  required_argument, NULL, 1 },
                 { "negate",         no_argument,       NULL, 2 },
 		{ "formula",        required_argument, NULL, 3 },
+                { "color-distance", no_argument,       NULL, 4 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "smooth-option",  required_argument, NULL, 'd' },
@@ -86,6 +87,9 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
 			if (parse_formula(optarg) < 0)
 				bad_arg("--formula", optarg);
 			break;
+                case 4:
+                        gbl.color_distance = true;
+                        break;
                 case 'D':
                         gbl.distance_est = true;
                         break;

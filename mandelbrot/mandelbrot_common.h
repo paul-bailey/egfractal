@@ -53,6 +53,7 @@ extern struct gbl_t {
         bool distance_est;
         bool verbose;
         bool negate;
+        bool color_distance;
         complex_t (*formula)(complex_t, complex_t);
         complex_t (*dformula)(complex_t, complex_t);
 } gbl;
