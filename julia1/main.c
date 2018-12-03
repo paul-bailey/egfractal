@@ -52,15 +52,15 @@ struct gbl_t gbl = {
         .bailoutsq = 4.0L,
         .distance_root = 0.25,
         .eq_option = 0.5L,
+        .log_d = 0.,
+        .formula = NULL,
+        .dformula = NULL,
         .distance_est = false,
         .negate = false,
         .equalize = false,
         .color_distance = false,
         .verbose = false,
 };
-
-/* initialized early in main() */
-static mfloat_t log_2;
 
 /* Error helpers */
 static void
@@ -93,14 +93,26 @@ iterate_distance(complex_t z)
         mfloat_t zmod;
         complex_t dz = { .re = 1.0L, .im = 0.0L };
         complex_t c = { .re = gbl.cx, .im = gbl.cy };
-        for (i = 0; i < n; i++) {
-                /* "z = z^2 + c" and "dz = f'(c)*dz + 1.0" */
-                complex_t ztmp = complex_add(complex_sq(z), c);
-                dz = complex_mul(z, dz);
-                dz = complex_mulr(dz, 2.0L);
-                z = ztmp;
-                if (complex_modulus2(z) >= gbl.bailoutsq)
-                        break;
+        if (gbl.formula) {
+                for (i = 0; i < n; i++) {
+                        complex_t ztmp = gbl.formula(z, c);
+                        if (!complex_isfinite(ztmp))
+                                break;
+                        dz = complex_mul(gbl.dformula(z, c), dz);
+                        z = ztmp;
+                        if (complex_modulus2(z) >= gbl.bailoutsq)
+                                break;
+                }
+        } else {
+                for (i = 0; i < n; i++) {
+                        /* "z = z^2 + c" and "dz = f'(c)*dz + 1.0" */
+                        complex_t ztmp = complex_add(complex_sq(z), c);
+                        dz = complex_mul(z, dz);
+                        dz = complex_mulr(dz, 2.0L);
+                        z = ztmp;
+                        if (complex_modulus2(z) >= gbl.bailoutsq)
+                                break;
+                }
         }
         if (dz.re == 0.0 && dz.im == 0.0)
                 return -1L;
@@ -114,17 +126,26 @@ static mfloat_t
 iterate_normal(complex_t z)
 {
         mfloat_t ret;
-        unsigned long i;
+        unsigned long i, n = gbl.n_iteration;
         complex_t c = { .re = gbl.cx, .im = gbl.cy };
 
-        for (i = 0; i < gbl.n_iteration; i++) {
-                if (complex_modulus2(z) >= gbl.bailoutsq)
-                        break;
+        if (gbl.formula) {
+                for (i = 0; i < n; i++) {
+                        if (!complex_isfinite(z))
+                                break;
+                        if (complex_modulus2(z) >= gbl.bailoutsq)
+                                break;
+                        z = gbl.formula(z, c);
+                }
+        } else {
                 /* "z = z^2 + c */
-                z = complex_add(complex_sq(z), c);
+                for (i = 0; i < gbl.n_iteration; i++) {
+                        if (complex_modulus2(z) >= gbl.bailoutsq)
+                                break;
+                        z = complex_add(complex_sq(z), c);
+                }
         }
-
-        if (i == gbl.n_iteration)
+        if (i == n)
                 return INSIDE;
 
         /* TODO: Dither here */
@@ -138,7 +159,7 @@ iterate_normal(complex_t z)
                          * Is this correct?
                          */
                         mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0;
-                        mfloat_t nu = logl(log_zn / log_2) / log_2;
+                        mfloat_t nu = logl(log_zn / gbl.log_d) / gbl.log_d;
                         if (isfinite(log_zn) && isfinite(nu))
                                 ret += 1.0L - nu;
                 }
@@ -224,7 +245,7 @@ main(int argc, char **argv)
         Pxbuf *pxbuf;
 
         /* Initialize this "constant" */
-        log_2 = logl(2.0L);
+        gbl.log_d = logl(2.0L);
 
         outfile = parse_args(argc, argv);
 

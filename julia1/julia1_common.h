@@ -49,6 +49,9 @@ extern struct gbl_t {
         mfloat_t bailoutsq;
         mfloat_t distance_root;
         mfloat_t eq_option;
+        mfloat_t log_d;
+        complex_t (*formula)(complex_t, complex_t);
+        complex_t (*dformula)(complex_t, complex_t);
         bool distance_est;
         bool negate;
         bool equalize;

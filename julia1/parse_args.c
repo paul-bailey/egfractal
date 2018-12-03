@@ -21,6 +21,7 @@ parse_args(int argc, char **argv)
                 { "negate",         no_argument,       NULL, 2 },
                 { "equalize",       optional_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
+                { "formula",        required_argument, NULL, 5 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { NULL,             0,                 NULL, 0 },
         };
@@ -55,6 +56,17 @@ parse_args(int argc, char **argv)
                 case 4:
                         gbl.color_distance = true;
                         break;
+                case 5:
+                    {
+                        const struct formula_t *f;
+                        f = parse_formula(optarg);
+                        if (f == NULL)
+                                bad_arg("--formula", optarg);
+                        gbl.formula = f->fn;
+                        gbl.dformula = f->dfn;
+                        gbl.log_d = f->log_d;
+                        break;
+                    }
                 case 'D':
                         gbl.distance_est = true;
                         break;
