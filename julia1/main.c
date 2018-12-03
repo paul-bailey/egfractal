@@ -53,6 +53,7 @@ struct gbl_t gbl = {
         .distance_root = 0.25,
         .distance_est = false,
         .negate = false,
+        .equalize = false,
 };
 
 /* initialized early in main() */
@@ -229,6 +230,8 @@ main(int argc, char **argv)
         }
         if (gbl.negate)
                 pxbuf_negate(pxbuf);
+        if (gbl.equalize)
+                pxbuf_eq(pxbuf, 1.0L, true);
         pxbuf_print(pxbuf, fp);
         fclose(fp);
         pxbuf_free(pxbuf);

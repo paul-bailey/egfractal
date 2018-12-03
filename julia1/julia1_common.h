@@ -50,6 +50,7 @@ extern struct gbl_t {
         mfloat_t distance_root;
         bool distance_est;
         bool negate;
+        bool equalize;
 } gbl;
 
 /* palette.c */

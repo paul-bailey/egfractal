@@ -19,6 +19,7 @@ parse_args(int argc, char **argv)
         static const struct option long_options[] = {
                 { "distance-root",  required_argument, NULL, 1 },
                 { "negate",         no_argument,       NULL, 2 },
+                { "equalize",       no_argument,       NULL, 3 },
                 { NULL,             0,                 NULL, 0 },
         };
         char *endptr;
@@ -38,6 +39,9 @@ parse_args(int argc, char **argv)
                     }
                 case 2:
                         gbl.negate = true;
+                        break;
+                case 3:
+                        gbl.equalize = true;
                         break;
                 case 'D':
                         gbl.distance_est = true;
@@ -102,7 +106,7 @@ parse_args(int argc, char **argv)
                                 bad_arg("-I", optarg);
                         break;
                 default:
-                        fprintf(stderr, "Unknown arg");
+                        fprintf(stderr, "Unknown arg\n");
                         exit(EXIT_FAILURE);
                 }
         }
