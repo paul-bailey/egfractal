@@ -5,7 +5,7 @@ while test $# -ne 0; do
         case $1 in
         --verbose|-v)
                 # TODO: Enable this in code
-                verbose=""
+                verbose="-v"
                 ;;
         --size)
                 size_opt="-w${2} -h${2}"

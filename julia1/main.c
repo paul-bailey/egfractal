@@ -56,6 +56,7 @@ struct gbl_t gbl = {
         .negate = false,
         .equalize = false,
         .color_distance = false,
+        .verbose = false,
 };
 
 /* initialized early in main() */
@@ -182,17 +183,27 @@ julia(Pxbuf *pxbuf)
                 oom();
         total = 0;
 
+        if (gbl.verbose) {
+                printf("Row %9d col %9d", 0, 0);
+                fflush(stdout);
+        }
         ptbuf = tbuf;
         max = 0.0;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         mfloat_t i = julia_px(row, col);
+                        if (gbl.verbose) {
+                                printf("\e[23D%9d col %9d", row, col);
+                                fflush(stdout);
+                        }
                         if (i > max)
                                 max = i;
                         total += (int)i;
                         *ptbuf++ = i;
                 }
         }
+        if (gbl.verbose)
+                putchar('\n');
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {

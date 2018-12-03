@@ -15,12 +15,13 @@ bad_arg(const char *type, const char *optarg)
 const char *
 parse_args(int argc, char **argv)
 {
-        static const char *optstr = "Db:d:z:x:y:w:h:n:R:I:p:o:";
+        static const char *optstr = "DI:R:b:d:h:n:o:p:vw:x:y:z:";
         static const struct option long_options[] = {
                 { "distance-root",  required_argument, NULL, 1 },
                 { "negate",         no_argument,       NULL, 2 },
                 { "equalize",       optional_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
+                { "verbose",        no_argument,       NULL, 'v' },
                 { NULL,             0,                 NULL, 0 },
         };
         char *endptr;
@@ -115,6 +116,9 @@ parse_args(int argc, char **argv)
                         gbl.cy = strtold(optarg, &endptr);
                         if (endptr == optarg)
                                 bad_arg("-I", optarg);
+                        break;
+                case 'v':
+                        gbl.verbose = true;
                         break;
                 default:
                         fprintf(stderr, "Unknown arg\n");
