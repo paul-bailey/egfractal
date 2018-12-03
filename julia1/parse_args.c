@@ -19,7 +19,7 @@ parse_args(int argc, char **argv)
         static const struct option long_options[] = {
                 { "distance-root",  required_argument, NULL, 1 },
                 { "negate",         no_argument,       NULL, 2 },
-                { "equalize",       no_argument,       NULL, 3 },
+                { "equalize",       optional_argument, NULL, 3 },
                 { NULL,             0,                 NULL, 0 },
         };
         char *endptr;
@@ -42,6 +42,13 @@ parse_args(int argc, char **argv)
                         break;
                 case 3:
                         gbl.equalize = true;
+                        if (optarg) {
+                                gbl.eq_option = strtold(optarg, &endptr);
+                                if (endptr == optarg)
+                                        bad_arg("--equalize", optarg);
+                        } else {
+                                gbl.eq_option = 1.0L;
+                        }
                         break;
                 case 'D':
                         gbl.distance_est = true;

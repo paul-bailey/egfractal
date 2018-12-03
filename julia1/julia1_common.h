@@ -48,6 +48,7 @@ extern struct gbl_t {
         mfloat_t bailout;
         mfloat_t bailoutsq;
         mfloat_t distance_root;
+        mfloat_t eq_option;
         bool distance_est;
         bool negate;
         bool equalize;
