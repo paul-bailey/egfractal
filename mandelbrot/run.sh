@@ -41,6 +41,10 @@ fi
 # The above competes with this interesting one.
 ./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-11.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
 ./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-12.bmp -z4 -D --formula sin --distance-root 8 --color-distance -p4
+# TODO: Add these as --burnship options
+# ./burnship1 -z 0.001 -x 1.625 -y -0.002 -w 3000 -h 3000 -n 80 -d
+# ./burnship1 -z 0.001 -x 1.620 -y 0.00199 -w 3000 -h 3000 -n 40 -d
+# ./burnship1 -z 0.0005 -x 1.624 -y -0.001 -w 3000 -h 3000 -n 800 -d
 
 
 # Old favorites, some were picked out and added to above
