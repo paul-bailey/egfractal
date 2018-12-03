@@ -88,15 +88,44 @@ sine_dfml(complex_t z, complex_t c)
         return complex_cos(z);
 }
 
+static complex_t
+burnship_fml(complex_t z, complex_t c)
+{
+        z.re = fabsl(z.re);
+        z.im = fabsl(z.im);
+
+        return complex_add(complex_sq(z), c);
+}
+
+/*
+ * formulas like z = (|re| + i|im|)^2 are not differential everywhere,
+ * so just use d(z^2)/dz like with regular Mandelbrot and hope for the
+ * best.
+ */
+static complex_t
+burnship_dfml(complex_t z, complex_t c)
+{
+        return complex_mulr(z, 2.0);
+}
+
 struct lutbl_t {
         const char *name;
         struct formula_t formula;
 };
 
 static struct lutbl_t lut[] = {
-        { .name = "sin", .formula = { .fn = sine_fml, .dfn = sine_dfml } },
-        { .name = "cos", .formula = { .fn = cosine_fml, .dfn = cosine_dfml } },
-        { NULL, { NULL, NULL, } },
+        {
+                .name = "sin",
+                .formula = { .fn = sine_fml, .dfn = sine_dfml }
+        }, {
+                .name = "cos",
+                .formula = { .fn = cosine_fml, .dfn = cosine_dfml }
+        }, {
+                .name = "burnship",
+                .formula = { .fn = burnship_fml, .dfn = burnship_dfml }
+        }, {
+                NULL, { NULL, NULL, }
+        },
 };
 
 static struct formula_t pow_formula = {
