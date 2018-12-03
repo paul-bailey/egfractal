@@ -15,12 +15,30 @@ bad_arg(const char *type, const char *optarg)
 const char *
 parse_args(int argc, char **argv)
 {
+        static const char *optstr = "Db:d:z:x:y:w:h:n:R:I:p:o:";
+        static const struct option long_options[] = {
+                { "distance-root",  required_argument, NULL, 1 },
+                { "negate",         no_argument,       NULL, 2 },
+                { NULL,             0,                 NULL, 0 },
+        };
         char *endptr;
         int opt;
         const char *outfile = "julia1.bmp";
+        int option_index = 0;
 
-        while ((opt = getopt(argc, argv, "Db:d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
+        while ((opt = getopt_long(argc, argv, optstr, long_options, &option_index)) != -1) {
                 switch (opt) {
+                case 1:
+                    {
+                        int v = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("--distance-root", optarg);
+                        gbl.distance_root = 1.0L / (mfloat_t)v;
+                        break;
+                    }
+                case 2:
+                        gbl.negate = true;
+                        break;
                 case 'D':
                         gbl.distance_est = true;
                         break;

@@ -51,8 +51,9 @@ struct gbl_t gbl = {
         .cy = -0.3842,
         .bailout = 2.0L,
         .bailoutsq = 4.0L,
-        .distance_est = false,
         .distance_root = 0.25,
+        .distance_est = false,
+        .negate = false,
 };
 
 /* initialized early in main() */
@@ -225,6 +226,8 @@ main(int argc, char **argv)
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
+        if (gbl.negate)
+                pxbuf_negate(gbl.pxbuf);
         pxbuf_print(gbl.pxbuf, fp);
         fclose(fp);
         pxbuf_free(gbl.pxbuf);

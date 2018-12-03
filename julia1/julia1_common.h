@@ -48,8 +48,9 @@ extern struct gbl_t {
         mfloat_t cy;
         mfloat_t bailout;
         mfloat_t bailoutsq;
-        bool distance_est;
         mfloat_t distance_root;
+        bool distance_est;
+        bool negate;
 } gbl;
 
 /* palette.c */
