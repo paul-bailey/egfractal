@@ -55,5 +55,9 @@ extern struct gbl_t {
 /* palette.c */
 extern unsigned int get_color(mfloat_t idx, mfloat_t max);
 
+/* parse_args.c */
+/* returns name of output file to open */
+extern const char *parse_args(int argc, char **argv);
+
 #endif /* JULIA1_COMMON_H */
 

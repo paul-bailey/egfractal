@@ -66,13 +66,6 @@ oom(void)
         exit(EXIT_FAILURE);
 }
 
-static void
-usage(void)
-{
-        fprintf(stderr, "Bad arg\n");
-        exit(EXIT_FAILURE);
-}
-
 /* scale pixels to points of mandelbrot set and handle zoom. */
 static complex_t
 xy_to_complex(int row, int col)
@@ -213,93 +206,25 @@ int
 main(int argc, char **argv)
 {
         FILE *fp;
-        char *endptr;
-        int opt;
-        const char *outfile = "julia1.bmp";
+        const char *outfile;
 
         /* Initialize this "constant" */
         log_2 = logl(2.0L);
 
-        while ((opt = getopt(argc, argv, "Db:d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
-                switch (opt) {
-                case 'D':
-                        gbl.distance_est = true;
-                        break;
-                case 'b':
-                        gbl.bailout = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        gbl.bailoutsq = gbl.bailout * gbl.bailout;
-                        break;
-                case 'd':
-                        gbl.dither = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'z':
-                        gbl.zoom_pct = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'x':
-                        gbl.zoom_xoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'y':
-                        gbl.zoom_yoffs = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'w':
-                        gbl.width = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'h':
-                        gbl.height = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'n':
-                        gbl.n_iteration = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'o':
-                        outfile = optarg;
-                        break;
-                case 'p':
-                        gbl.pallette = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'R': /* Real part of c */
-                        gbl.cx = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                case 'I': /* Imaginary part of c */
-                        gbl.cy = strtold(optarg, &endptr);
-                        if (endptr == optarg)
-                                usage();
-                        break;
-                default:
-                        usage();
-                }
-        }
+        outfile = parse_args(argc, argv);
+
         gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
         if (!gbl.pxbuf) {
                 fprintf(stderr, "OOM!\n");
                 return 1;
         }
 
+        julia();
         fp = fopen(outfile, "wb");
         if (!fp) {
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
-        julia();
         pxbuf_print(gbl.pxbuf, fp);
         fclose(fp);
         pxbuf_free(gbl.pxbuf);
