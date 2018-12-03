@@ -182,7 +182,32 @@ idx_to_color(mfloat_t idx)
 }
 
 static unsigned int
-distance_to_color(mfloat_t dist, mfloat_t max)
+distance_to_color_palette(mfloat_t dist, mfloat_t max)
+{
+        mfloat_t d;
+        unsigned int i, v1, v2;
+        long double dummy = 0.0L;
+
+        if (inside_color == NO_COLOR)
+                initialize_pallette();
+
+        if (dist < 0.0L)
+                return inside_color;
+
+        assert(dist <= max);
+
+        /* Linear interpolation of pallette[idx % NCOLOR] */
+        d = powl(dist / max, gbl.distance_root) * (mfloat_t)NCOLOR;
+        i = (int)d;
+        if (i >= NCOLOR)
+                i = NCOLOR - 1;
+        v1 = pallette[i];
+        v2 = pallette[i == NCOLOR - 1 ? 0 : i + 1];
+        return linear_interp(v1, v2, modfl(d, &dummy));
+}
+
+static unsigned int
+distance_to_color_bw(mfloat_t dist, mfloat_t max)
 {
         unsigned int magn;
 
@@ -195,6 +220,15 @@ distance_to_color(mfloat_t dist, mfloat_t max)
                 magn = 255;
 
         return TO_RGB(magn, magn, magn);
+}
+
+static unsigned int
+distance_to_color(mfloat_t dist, mfloat_t max)
+{
+        if (gbl.color_distance)
+                return distance_to_color_palette(dist, max);
+        else
+                return distance_to_color_bw(dist, max);
 }
 
 unsigned int

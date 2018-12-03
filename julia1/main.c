@@ -51,10 +51,11 @@ struct gbl_t gbl = {
         .bailout = 2.0L,
         .bailoutsq = 4.0L,
         .distance_root = 0.25,
+        .eq_option = 0.5L,
         .distance_est = false,
         .negate = false,
         .equalize = false,
-        .eq_option = 0.5L,
+        .color_distance = false,
 };
 
 /* initialized early in main() */

@@ -20,6 +20,7 @@ parse_args(int argc, char **argv)
                 { "distance-root",  required_argument, NULL, 1 },
                 { "negate",         no_argument,       NULL, 2 },
                 { "equalize",       optional_argument, NULL, 3 },
+                { "color-distance", no_argument,       NULL, 4 },
                 { NULL,             0,                 NULL, 0 },
         };
         char *endptr;
@@ -49,6 +50,9 @@ parse_args(int argc, char **argv)
                         } else {
                                 gbl.eq_option = 1.0L;
                         }
+                        break;
+                case 4:
+                        gbl.color_distance = true;
                         break;
                 case 'D':
                         gbl.distance_est = true;

@@ -52,6 +52,7 @@ extern struct gbl_t {
         bool distance_est;
         bool negate;
         bool equalize;
+        bool color_distance;
 } gbl;
 
 /* palette.c */
