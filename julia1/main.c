@@ -38,7 +38,6 @@
 #include <string.h>
 
 struct gbl_t gbl = {
-        .pxbuf = NULL,
         .n_iteration = 1000,
         .dither = 0,
         .height = 600,
@@ -170,7 +169,7 @@ julia_px(int row, int col)
 }
 
 static void
-julia(void)
+julia(Pxbuf *pxbuf)
 {
         int row, col;
         unsigned long total;
@@ -197,7 +196,7 @@ julia(void)
                         unsigned int color;
                         mfloat_t i = *ptbuf++;
                         color = get_color(i, max);
-                        pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
+                        pxbuf_fill_pixel(pxbuf, row, col, color);
                 }
         }
         free(tbuf);
@@ -208,28 +207,30 @@ main(int argc, char **argv)
 {
         FILE *fp;
         const char *outfile;
+        Pxbuf *pxbuf;
 
         /* Initialize this "constant" */
         log_2 = logl(2.0L);
 
         outfile = parse_args(argc, argv);
 
-        gbl.pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
-        if (!gbl.pxbuf) {
+        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
+        if (!pxbuf) {
                 fprintf(stderr, "OOM!\n");
                 return 1;
         }
 
-        julia();
+        julia(pxbuf);
+
         fp = fopen(outfile, "wb");
         if (!fp) {
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
         if (gbl.negate)
-                pxbuf_negate(gbl.pxbuf);
-        pxbuf_print(gbl.pxbuf, fp);
+                pxbuf_negate(pxbuf);
+        pxbuf_print(pxbuf, fp);
         fclose(fp);
-        pxbuf_free(gbl.pxbuf);
+        pxbuf_free(pxbuf);
         return 0;
 }
