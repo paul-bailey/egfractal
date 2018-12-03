@@ -78,5 +78,13 @@ extern void pxbuf_free(Pxbuf *pxbuf);
 extern void pxbuf_eq(Pxbuf *pxbuf, double exp, bool preserve_color);
 extern void pxbuf_negate(Pxbuf *pxbuf);
 
+/* formulas.c */
+struct formula_t {
+        complex_t (*fn)(complex_t, complex_t);
+        complex_t (*dfn)(complex_t, complex_t);
+        mfloat_t log_d;
+};
+extern const struct formula_t *parse_formula(const char *name);
+
 #endif /* FRACTAL_COMMON_H */
 
