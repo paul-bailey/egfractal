@@ -1,50 +1,76 @@
 #! /usr/bin/env bash
 # shell script for generating some of my favorites
 
-generate_readmes=n
-case $1 in
-    readme)
-                generate_readmes=y
+size_opt="-w6000 -h6000"
+verbose=""
+convert=n
+convert_type=png
+delete_current=n
+while test $# -ne 0
+do
+        case $1 in
+        --verbose|-v)
+                verbose="-v"
                 ;;
-         *)
+        --size)
+                size_opt="-w${2} -h${2}"
+                shift;
                 ;;
-esac
+        --convert)
+                case $2 in
+                png) convert_type=png ;;
+                jpg) convert_type=jpg ;;
+                *)
+                        echo "Invalid conversion type \"$2\"">&2
+                        exit 1
+                        ;;
+                esac
+                convert=y
+                shift
+                ;;
+        --delete)
+                delete_current=y
+                ;;
+        *)
+                echo "Invalid option \"$1\"">&2
+                exit 1
+                ;;
+        esac
+        shift
+done
 
-if test $generate_readmes = y
+if test ${delete_current} = y
 then
-    ./mandelbrot -b16 -w300 -h300 -o readme-10.bmp -z0.0001  -d1 -p1 -x 1.2090000 -y0.2385000
-    ./mandelbrot -b16 -w300 -h300 -o readme-15.bmp -z1.0e-7  -d1 -p2 -x 1.2089925 -y0.2385097 -n1200
-    ./mandelbrot -b16 -w300 -h300 -o readme-16.bmp -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
-    ./mandelbrot -b16 -w300 -h300 -o readme-17.bmp -z4.0e-12 -d1 -p3 -x-0.14000524460488 -y-0.64935985788190
-    ./mandelbrot -b16 -w300 -h300 -o readme-18.bmp -z1.0e-4 -D  -x 0.7699100 -y 0.10949000
-    ./mandelbrot -b16 -w300 -h300 -o readme-19.bmp -z1.0e-6 -D  -x-0.25204350 -y 0.00014850 --negate
-    ./mandelbrot -b16 -w300 -h300 -o readme-20.bmp -z1.0e-6 -D  -x-0.25205250 -y 0.00014590 -n100000
-    for i in `seq 10 20`
-    do
-        fil=readme-${i}
-        test -f ${fil}.bmp && convert ${fil}.bmp ${fil}.png
-        test -f ${fil}.bmp && rm ${fil}.bmp
-    done
-    exit 0
+        rm *.bmp
 fi
 
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-01.bmp -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-02.bmp -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-03.bmp -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
-./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-04.bmp -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-05.bmp -z1.0e-4 -D -x 0.76991000 -y 0.10949000
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-06.bmp -z1.0e-6 -D -x-0.25204350 -y 0.00014850 -n3000 --negate
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-07.bmp -z1.0e-6 -D -x-0.25205250 -y 0.00014590 -n100000
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-08.bmp -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-09.bmp -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
-./mandelbrot -b32768 -w6000 -h6000 -o mandelbrot-favorites-10.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --distance-root 6
-# The above competes with this interesting one.
-./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-11.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
-./mandelbrot -b65536 -w6000 -h6000 -o mandelbrot-favorites-12.bmp -z4 -D --formula sin --distance-root 8 --color-distance -p4
-# TODO: Add these as --burnship options
-# ./burnship1 -z 0.001 -x 1.625 -y -0.002 -w 3000 -h 3000 -n 80 -d
-# ./burnship1 -z 0.001 -x 1.620 -y 0.00199 -w 3000 -h 3000 -n 40 -d
-# ./burnship1 -z 0.0005 -x 1.624 -y -0.001 -w 3000 -h 3000 -n 800 -d
+common_args="${size_opt} ${verbose} -o mandelbrot-favorites"
+
+./mandelbrot -b32768 ${common_args}-01.bmp -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
+./mandelbrot -b32768 ${common_args}-02.bmp -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
+./mandelbrot -b32768 ${common_args}-03.bmp -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
+./mandelbrot -b65536 ${common_args}-04.bmp -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
+./mandelbrot -b32768 ${common_args}-05.bmp -z1.0e-4 -D -x 0.76991000 -y 0.10949000
+./mandelbrot -b32768 ${common_args}-06.bmp -z1.0e-6 -D -x-0.25204350 -y 0.00014850 -n3000 --negate
+./mandelbrot -b32768 ${common_args}-07.bmp -z1.0e-6 -D -x-0.25205250 -y 0.00014590 -n100000
+./mandelbrot -b32768 ${common_args}-08.bmp -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
+./mandelbrot -b32768 ${common_args}-09.bmp -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
+./mandelbrot -b32768 ${common_args}-10.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --distance-root 6
+./mandelbrot -b65536 ${common_args}-11.bmp -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
+./mandelbrot -b65536 ${common_args}-12.bmp -z4 -D --formula sin --distance-root 8 --color-distance -p4
+./mandelbrot -b32768 ${common_args}-13.bmp -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
+./mandelbrot -b32768 ${common_args}-14.bmp -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
+./mandelbrot -b32768 ${common_args}-15.bmp -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
+if test $convert = y
+        then
+        for bmp in *.bmp
+        do
+                # could be $jpg instead of $png, but what's in a name?
+                png=`echo $bmp | sed "s/bmp/${convert_type}/"`
+                convert $bmp $png
+                rm $bmp
+        done
+fi
 
 
 # Old favorites, some were picked out and added to above
