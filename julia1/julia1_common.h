@@ -48,10 +48,12 @@ extern struct gbl_t {
         mfloat_t cy;
         mfloat_t bailout;
         mfloat_t bailoutsq;
+        bool distance_est;
+        mfloat_t distance_root;
 } gbl;
 
 /* palette.c */
-extern unsigned int get_color(mfloat_t idx);
+extern unsigned int get_color(mfloat_t idx, mfloat_t max);
 
 #endif /* JULIA1_COMMON_H */
 

@@ -160,8 +160,8 @@ initialize_pallette(void)
         }
 }
 
-unsigned int
-get_color(mfloat_t idx)
+static unsigned int
+idx_to_color(mfloat_t idx)
 {
         int i;
         unsigned int v1, v2;
@@ -179,6 +179,31 @@ get_color(mfloat_t idx)
         v1 = pallette[i];
         v2 = pallette[i == NCOLOR - 1 ? 0 : i + 1];
         return linear_interp(v1, v2, modfl(idx, &dummy));
+}
+
+static unsigned int
+distance_to_color(mfloat_t dist, mfloat_t max)
+{
+        unsigned int magn;
+
+        if (dist <= 0.0L)
+                return COLOR_BLACK;
+
+        /* TODO: Make the root be a command-line option */
+        magn = (unsigned int)(255.0 * pow(dist / max, gbl.distance_root));
+        if (magn > 255)
+                magn = 255;
+
+        return TO_RGB(magn, magn, magn);
+}
+
+unsigned int
+get_color(mfloat_t idx, mfloat_t max)
+{
+        if (gbl.distance_est)
+                return distance_to_color(idx, max);
+        else
+                return idx_to_color(idx);
 }
 
 

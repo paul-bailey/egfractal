@@ -51,6 +51,8 @@ struct gbl_t gbl = {
         .cy = -0.3842,
         .bailout = 2.0L,
         .bailoutsq = 4.0L,
+        .distance_est = false,
+        .distance_root = 0.25,
 };
 
 /* initialized early in main() */
@@ -88,14 +90,36 @@ xy_to_complex(int row, int col)
 #define INSIDE (-1.0L)
 
 static mfloat_t
-julia_px(int row, int col)
+iterate_distance(complex_t z)
+{
+        unsigned long i, n = gbl.n_iteration;
+        mfloat_t zmod;
+        complex_t dz = { .re = 1.0L, .im = 0.0L };
+        complex_t c = { .re = gbl.cx, .im = gbl.cy };
+        for (i = 0; i < n; i++) {
+                /* "z = z^2 + c" and "dz = f'(c)*dz + 1.0" */
+                complex_t ztmp = complex_add(complex_sq(z), c);
+                dz = complex_mul(z, dz);
+                dz = complex_mulr(dz, 2.0L);
+                z = ztmp;
+                if (complex_modulus2(z) >= gbl.bailoutsq)
+                        break;
+        }
+        if (dz.re == 0.0 && dz.im == 0.0)
+                return -1L;
+        assert(z.re != 0.0 || z.im != 0.0);
+        assert(dz.re != 0.0 || dz.im != 0.0);
+        zmod = complex_modulus(z);
+        return zmod * logl(zmod) / complex_modulus(dz);
+}
+
+static mfloat_t
+iterate_normal(complex_t z)
 {
         mfloat_t ret;
         unsigned long i;
-        complex_t z;
         complex_t c = { .re = gbl.cx, .im = gbl.cy };
 
-        z = xy_to_complex(row, col);
         for (i = 0; i < gbl.n_iteration; i++) {
                 if (complex_modulus2(z) >= gbl.bailoutsq)
                         break;
@@ -141,27 +165,34 @@ julia_px(int row, int col)
         return ret;
 }
 
+static mfloat_t
+julia_px(int row, int col)
+{
+        complex_t z = xy_to_complex(row, col);
+        if (gbl.distance_est)
+                return iterate_distance(z);
+        else
+                return iterate_normal(z);
+}
+
 static void
 julia(void)
 {
         int row, col;
         unsigned long total;
-        unsigned long *histogram;
-        mfloat_t *ptbuf, *tbuf;
-        histogram = malloc(gbl.n_iteration * sizeof(*histogram));
-        if (!histogram)
-                oom();
+        mfloat_t *ptbuf, *tbuf, max;
         tbuf = malloc(gbl.width * gbl.height * sizeof(*tbuf));
         if (!tbuf)
                 oom();
-        memset(histogram, 0, gbl.n_iteration * sizeof(*histogram));
         total = 0;
 
         ptbuf = tbuf;
+        max = 0.0;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         mfloat_t i = julia_px(row, col);
-                        histogram[(int)i]++;
+                        if (i > max)
+                                max = i;
                         total += (int)i;
                         *ptbuf++ = i;
                 }
@@ -171,11 +202,11 @@ julia(void)
                 for (col = 0; col < gbl.width; col++) {
                         unsigned int color;
                         mfloat_t i = *ptbuf++;
-                        i += ((mfloat_t)histogram[(int)i] / (mfloat_t)total + 0.5);
-                        color = get_color(i);
+                        color = get_color(i, max);
                         pxbuf_fill_pixel(gbl.pxbuf, row, col, color);
                 }
         }
+        free(tbuf);
 }
 
 int
@@ -189,8 +220,11 @@ main(int argc, char **argv)
         /* Initialize this "constant" */
         log_2 = logl(2.0L);
 
-        while ((opt = getopt(argc, argv, "b:d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
+        while ((opt = getopt(argc, argv, "Db:d:z:x:y:w:h:n:R:I:p:o:")) != -1) {
                 switch (opt) {
+                case 'D':
+                        gbl.distance_est = true;
+                        break;
                 case 'b':
                         gbl.bailout = strtold(optarg, &endptr);
                         if (endptr == optarg)
