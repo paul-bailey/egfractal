@@ -84,9 +84,15 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         gbl.negate = true;
                         break;
 		case 3:
-			if (parse_formula(optarg) < 0)
+                    {
+                        const struct formula_t *f;
+			if ((f = parse_formula(optarg)) == NULL)
 				bad_arg("--formula", optarg);
+                        gbl.formula  = f->fn;
+                        gbl.dformula = f->dfn;
+                        gbl.log_d    = f->log_d;
 			break;
+                    }
                 case 4:
                         gbl.color_distance = true;
                         break;

@@ -70,7 +70,13 @@ struct optflags_t {
 extern void parse_args(int argc, char **argv, struct optflags_t *optflags);
 
 /* mandelbrot_functions.c */
-int parse_formula(const char *name);
+struct formula_t {
+        complex_t (*fn)(complex_t, complex_t);
+        complex_t (*dfn)(complex_t, complex_t);
+        mfloat_t log_d;
+};
+
+extern const struct formula_t *parse_formula(const char *name);
 
 #endif /* MANDELBROT_COMMON_H */
 
