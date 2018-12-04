@@ -59,6 +59,7 @@ static struct gbl_t {
         bool use_line_y;
         bool use_line_x;
         bool negate;
+        complex_t (*formula)(complex_t, complex_t);
 } gbl = {
         .n_red      = 5000,
         .n_green    = 500,
@@ -75,6 +76,7 @@ static struct gbl_t {
         .use_line_y = false,
         .use_line_x = false,
         .negate     = false,
+        .formula    = NULL,
 };
 
 /* Error helpers */
@@ -109,21 +111,44 @@ iterate_r(complex_t c, unsigned long *buf, int n, bool isdivergent)
         int i;
         int min = gbl.min;
         complex_t z = { .re = 0.0L, .im = 0.0L };
-        for (i = 0; i < n; i++) {
-                /* next z = z^2 + c */
-                complex_t ztmp = complex_add(complex_sq(z), c);
-                if (isdivergent && i > min)
-                        save_to_hist(buf, ztmp);
+        /*
+         * Separating this before the for loop, in case it helps
+         * with any inline-optimizations.
+         */
+        if (gbl.formula) {
+                for (i = 0; i < n; i++) {
+                        complex_t ztmp = gbl.formula(z, c);
+                        if (isdivergent && i > min)
+                                save_to_hist(buf, ztmp);
 
-                /* Check both bailout and periodicity */
-                if (complex_modulus2(ztmp) >= gbl.bailsqu
-                    || (ztmp.re == z.re && ztmp.im == z.im)) {
-                        if (!isdivergent)
-                                iterate_r(c, buf, n, true);
-                        return;
+                        /* Check both bailout and periodicity */
+                        if (ztmp.re == z.re && ztmp.im == z.im)
+                                return;
+                        if (complex_modulus2(ztmp) >= gbl.bailsqu) {
+                                if (!isdivergent)
+                                        iterate_r(c, buf, n, true);
+                                return;
+                        }
+
+                        z = ztmp;
                 }
+        } else {
+                for (i = 0; i < n; i++) {
+                        /* next z = z^2 + c */
+                        complex_t ztmp = complex_add(complex_sq(z), c);
+                        if (isdivergent && i > min)
+                                save_to_hist(buf, ztmp);
 
-                z = ztmp;
+                        /* Check both bailout and periodicity */
+                        if (complex_modulus2(ztmp) >= gbl.bailsqu
+                            || (ztmp.re == z.re && ztmp.im == z.im)) {
+                                if (!isdivergent)
+                                        iterate_r(c, buf, n, true);
+                                return;
+                        }
+
+                        z = ztmp;
+                }
         }
 }
 
@@ -145,7 +170,8 @@ inside_cardioid_or_bulb(complex_t c)
 static void
 iterate(complex_t c, unsigned long *buf, int n)
 {
-        if (inside_cardioid_or_bulb(c))
+        /* Can't check cardoid when using different formula */
+        if (!gbl.formula && inside_cardioid_or_bulb(c))
                 return;
         iterate_r(c, buf, n, false);
 }
@@ -289,6 +315,7 @@ parse_args(int argc, char **argv)
                 { "equalize",       optional_argument, NULL, 3 },
                 { "histogram",      optional_argument, NULL, 3 },
                 { "negate",         no_argument,       NULL, 4 },
+                { "formula",        required_argument, NULL, 5 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
@@ -331,6 +358,16 @@ parse_args(int argc, char **argv)
                 case 4:
                         gbl.negate = true;
                         break;
+                case 5:
+                    {
+                        const struct formula_t *f;
+                        f = parse_formula(optarg);
+                        if (f == NULL)
+                                bad_arg("--formula", optarg);
+                        gbl.formula = f->fn;
+                        /* buddhabrot doesn't need derivative or order. */
+                        break;
+                    }
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
                         if (endptr == optarg)
