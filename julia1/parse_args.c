@@ -17,7 +17,7 @@ parse_args(int argc, char **argv)
 {
         static const char *optstr = "DI:R:b:d:h:n:o:p:vw:x:y:z:";
         static const struct option long_options[] = {
-                { "distance-root",  required_argument, NULL, 1 },
+                { "distance",       optional_argument, NULL, 'D' },
                 { "negate",         no_argument,       NULL, 2 },
                 { "equalize",       optional_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
@@ -32,14 +32,6 @@ parse_args(int argc, char **argv)
 
         while ((opt = getopt_long(argc, argv, optstr, long_options, &option_index)) != -1) {
                 switch (opt) {
-                case 1:
-                    {
-                        int v = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                bad_arg("--distance-root", optarg);
-                        gbl.distance_root = 1.0L / (mfloat_t)v;
-                        break;
-                    }
                 case 2:
                         gbl.negate = true;
                         break;
@@ -69,6 +61,12 @@ parse_args(int argc, char **argv)
                     }
                 case 'D':
                         gbl.distance_est = true;
+                        if (optarg) {
+                                int v = strtoul(optarg, &endptr, 0);
+                                if (endptr == optarg)
+                                        bad_arg("--distance", optarg);
+                                gbl.distance_root = 1.0L / (mfloat_t)v;
+                        }
                         break;
                 case 'b':
                         gbl.bailout = strtold(optarg, &endptr);

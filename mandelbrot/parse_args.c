@@ -46,7 +46,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
 {
         static const struct option long_options[] = {
                 { "print-palette",  no_argument,       NULL, 0 },
-                { "distance-root",  required_argument, NULL, 1 },
+                { "distance",       optional_argument, NULL, 'D' },
                 { "negate",         no_argument,       NULL, 2 },
 		{ "formula",        required_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
@@ -72,14 +72,6 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 case 0:
                         optflags->print_palette = true;
                         break;
-                case 1:
-                    {
-                        int v = strtoul(optarg, &endptr, 0);
-                        if (endptr == optarg)
-                                bad_arg("--distance-root", optarg);
-                        gbl.distance_root = 1.0L / (mfloat_t)v;
-                        break;
-                    }
                 case 2:
                         gbl.negate = true;
                         break;
@@ -98,6 +90,12 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         break;
                 case 'D':
                         gbl.distance_est = true;
+                        if (optarg) {
+                                int v = strtoul(optarg, &endptr, 0);
+                                if (endptr == optarg)
+                                        bad_arg("--distance", optarg);
+                                gbl.distance_root = 1.0L / (mfloat_t)v;
+                        }
                         break;
                 case 'b':
                         gbl.bailout = strtold(optarg, &endptr);
@@ -152,6 +150,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                                 bad_arg("-z --zoom-pct", optarg);
                         break;
                 case '?':
+                case 1:
                 default:
                         fprintf(stderr, "Unknown option -%c\n", opt);
                         exit(EXIT_FAILURE);
