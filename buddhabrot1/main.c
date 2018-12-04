@@ -29,6 +29,53 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The Buddhabrot algorithm:
+ * =========================
+ *
+ * For each random point: If it's in the Mandelbrot set (determined to
+ * be points that do not escape before the max number of iterations),
+ * then do nothing.  If it's outside the Mandelbrot set, then trace its
+ * path from f(z=0) t0 f(z=bailout).
+ *
+ * The path is traced with a simple histogram: an array of counters for
+ * each pixel.  For every z[i] before z == bailout, increment the counter
+ * corresponding to z[i].  There are three such histograms, one for each
+ * RGB channel.
+ *
+ * (The histogram looks like a one-dimensional array in the code, but
+ * that's just because the dimensions are command-line options.  In
+ * purpose it's really a two-dimensional array like the z plane and the
+ * bitmap).
+ *
+ * Optimizations:
+ * --------------
+ *
+ * These optimizations were taken straight out of the Wikipedia pages
+ * for Buddhabrot and Mandelbrot set.
+ *
+ * For points that exist inside the Mandelbrot set, this algorithm can
+ * take extra long, since it means maxing out iterations.  This code uses
+ * two optimizations for that:
+ *
+ * 1. Since we know the formula for the main cardioid and largest bulb,
+ *    we can more quickly check for that first and bail if it's inside.
+ *    This covers the vast majority of samples inside the Mandelbrot set.
+ * 2. If z=z^2+c is unchanging, assume it's inside the Mandelbrot set.
+ *    (XXX: This might be useful for zoomed-in Mandelbrot-set algorithms,
+ *    but I'm not sure it helps much with Buddhabrot.)
+ *
+ * Wanted Optimizations:
+ * ---------------------
+ *
+ * If there's a fast way to tell if a sample is just next to, but
+ * outside, the Mandelbrot set, then you wouldn't have the problem of
+ * having to run close-to-max iterations twice.  But I don't know any
+ * such optimization.
+ *
+ * I also don't know any cheats like the cardioid check for formulas
+ * other than z^2+c.  This is unfortunate, since you can get some really
+ * gnarly images from other such formulas, like the burning ship algo.
  */
 #include "fractal_common.h"
 #include <stdlib.h>

@@ -61,24 +61,19 @@ how to create a new C-language project on MSDN anymore.
 System Requirements
 -------------------
 
-The main issue is RAM, which depends on the dimensions of the
-image you are generating.
-For example, in ``buddhabrot1``,
-each RGB channel has an array of ``unsigned long``’s whose length
-is the number of pixels,
-in addition to a similar array of ``long double``
-(quad double, depending on compiler),
-in addition to... a few other arrays.
-For a large 6000x6000 bitmap,
-a program could take up to two or three hundred megabytes of RAM.
+All you really need is a Unix-like environment and probably the Gnu
+version of libc.  This software doesn't (yet) try to take over a GPU or
+set priority or CPU affinity or anything fancy like that, so don't expect
+a 28-core beast to run this any faster than a regular computer.
 
-The second issue is speed.
-The **egfractal** programs are all single-threaded.
-The mandelbrot sets and julia sets shouldn’t take too long
-unless you are spelunking deep into the butt-crack
-of the cardioid, zoomed in so far that you need like a billion
-iterations per channel.
-Hats off to you.
+For best performance, use a machine with enough RAM for the program to
+allocate without having to swap.  How much RAM does the software use?
+It depends mainly on the dimensions of the image you are generating.  For
+example, in ``buddhabrot1``, each RGB channel has an array of
+``unsigned long``’s whose length is the number of pixels, in addition to
+a similar array of ``long double`` (quad double, depending on compiler),
+in addition to... a few other arrays.  For a large 6000x6000 bitmap,
+a program could take up to two or three hundred megabytes of RAM.
 
 Building
 --------
@@ -95,7 +90,7 @@ After that, run the conventional chain of commands:
 
 ::
 
-        $ ./configure # or "./configure --prefix=/your/preferred/path"
+        $ ./configure
         $ make
 
 Since you are building programs with simple names like ``mandelbrot``,
