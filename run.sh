@@ -49,7 +49,7 @@ test -d ${outdir} || mkdir ${outdir}
 
 common_args="${size_opt} ${verbose}"
 
-mbrot="./mandelbrot/mandelbrot ${common_args} -o ${outdir}/mandelbrot-favorites"
+mbrot="./mandelbrot/mandelbrot ${common_args} -o ${outdir}/mandelbrot"
 ${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
 ${mbrot}-02.bmp -b32768 -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
 ${mbrot}-03.bmp -b32768 -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
@@ -65,18 +65,19 @@ ${mbrot}-12.bmp -b65536 -z4 --formula sin --distance=8 --color-distance -p4
 ${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
 ${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
 ${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
+${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate --distance=6 --color-distance
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
-${julia}-1a.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
-${julia}-1b.bmp -p1 -R-0.400000000 -I-0.6000000 -b32768 -d1
-${julia}-1c.bmp -p1 -R-0.209600000 -I 0.7904000 -b32768 -d1 -z0.01 -x0.1
-${julia}-1d.bmp -D --equalize=0.8 -p1 -R-0.209600000 -I 0.7904000 -b32768 -d1 -z0.01 -x0.1
-${julia}-1e.bmp -p2 -R-0.200000000 -I 0.8000000 -b32768 -d1
-${julia}-1f.bmp -p2 -R-0.200000000 -I 0.8000000 -b32768 -d1 -z0.1
-${julia}-1g.bmp -p2 -R 0.138565244 -I-0.6493599 -z1.0e-3 -x0.1206000 -y0.5230000
-${julia}-1h.bmp -p2 -R 0.138565244 -I-0.6493599 -z5.0e-5 -x0.1205994 -y0.5231718
-${julia}-1i.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1 --negate -n1500
-${julia}-1j.bmp -p1 -R 1.625000000 -I-0.0020000 -b32768 --formula burnship -D --color-distance
+${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
+${julia}-02.bmp -p1 -R-0.400000000 -I-0.6000000 -b32768 -d1
+${julia}-03.bmp -p1 -R-0.209600000 -I 0.7904000 -b32768 -d1 -z0.01 -x0.1
+${julia}-04.bmp -D --equalize=0.8 -p1 -R-0.209600000 -I 0.7904000 -b32768 -d1 -z0.01 -x0.1
+${julia}-05.bmp -p2 -R-0.200000000 -I 0.8000000 -b32768 -d1
+${julia}-06.bmp -p2 -R-0.200000000 -I 0.8000000 -b32768 -d1 -z0.1
+${julia}-07.bmp -p2 -R 0.138565244 -I-0.6493599 -z1.0e-3 -x0.1206000 -y0.5230000
+${julia}-08.bmp -p2 -R 0.138565244 -I-0.6493599 -z5.0e-5 -x0.1205994 -y0.5231718
+${julia}-09.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1 --negate -n1500
+${julia}-10.bmp -p1 -R 1.625000000 -I-0.0020000 -b32768 --formula burnship -D --color-distance
 
 if test $convert = y
         then

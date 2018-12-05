@@ -74,6 +74,7 @@ cosine_fml(complex_t z, complex_t c)
         return complex_add(c, complex_cos(z));
 }
 
+/* XXX: Are these derivatives still true for complex number? */
 static complex_t
 cosine_dfml(complex_t z, complex_t c)
 {
