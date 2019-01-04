@@ -66,6 +66,7 @@ ${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
 ${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
 ${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
 ${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate --distance=6 --color-distance
+${mbrot}-17.bmp -b32768 -z 2.0e-8 -p2 -x 0.7210050 -y 0.3557445 -n 100000 --negate --distance=10 --color-distance
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
 ${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
