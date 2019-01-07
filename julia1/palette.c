@@ -64,6 +64,12 @@ linear_interp(unsigned int color1, unsigned int color2, mfloat_t frac)
         r1 = interp_helper(r1, r2, frac);
         g1 = interp_helper(g1, g2, frac);
         b1 = interp_helper(b1, b2, frac);
+        if (r1 >= 255)
+                r1 = 255;
+        if (g1 >= 255)
+                g1 = 255;
+        if (b1 >= 255)
+                b1 = 255;
         assert(r1 < 256);
         assert(g1 < 256);
         assert(b1 < 256);
@@ -194,7 +200,7 @@ distance_to_color_palette(mfloat_t dist, mfloat_t max)
         if (dist < 0.0L)
                 return inside_color;
 
-        assert(dist <= max);
+        // assert(dist <= max);
 
         /* Linear interpolation of pallette[idx % NCOLOR] */
         d = powl(dist / max, gbl.distance_root) * (mfloat_t)NCOLOR;
