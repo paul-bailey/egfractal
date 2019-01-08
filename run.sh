@@ -73,6 +73,14 @@ ${mbrot}-20.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.0747 --distan
 ${mbrot}-21.bmp -b32768 -z 1.0e-3 --formula sin -x 6.050185307 -y0.5000 --distance=8 --color-distance -p6
 ${mbrot}-22.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=4 --color-distance -p5 --negate
 ${mbrot}-23.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=16 --color-distance -p6
+${mbrot}-24.bmp -b32768 --formula cos -x 1.4000 -y 1.300 -z4.0e-1 --distance=16 --negate # TODO: needs work
+${mbrot}-25.bmp -b32768 --formula cos -x 1.7000 -y 1.700 -z2.0e-1 --distance=8 #ditto
+${mbrot}-26.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-4 --distance=8 #...
+${mbrot}-27.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=8 --color-distance -p5
+${mbrot}-28.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=16 --negate
+${mbrot}-29.bmp -b32768 --formula cos -x 1.850 -y 1.980 -z1.0e-1 --distance=8 --color-distance -p6
+${mbrot}-30.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-6 --distance=16 -n3000 # TODO: needs work
+${mbrot}-31.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 --distance=4 -n3000 --color-distance -p6
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
 ${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
