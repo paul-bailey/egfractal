@@ -66,11 +66,13 @@ ${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
 ${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
 ${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
 ${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate --distance=6 --color-distance
-${mbrot}-17.bmp -b32768 -z 1.0e-3 --formula burnship -p5 -x-0.952 -y 1.25000 --distance=8 --color-distance
+${mbrot}-17.bmp -b32768 -z 1.0e-3 --formula burnship -p5 -x-0.952 -y 1.25000 --distance=16 --color-distance
 ${mbrot}-18.bmp -b32768 -z 2.0e-8 -p2 -x 0.7210050 -y 0.3557445 -n 100000 --negate --distance=10 --color-distance
-${mbrot}-19.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=8 --color-distance -p7
+${mbrot}-19.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=3 --color-distance -p6 --negate
 ${mbrot}-20.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.0747 --distance=8 --color-distance -p6
 ${mbrot}-21.bmp -b32768 -z 1.0e-3 --formula sin -x 6.050185307 -y0.5000 --distance=8 --color-distance -p6
+${mbrot}-22.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=4 --color-distance -p5 --negate
+${mbrot}-23.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=16 --color-distance -p6
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
 ${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
@@ -83,7 +85,7 @@ ${julia}-07.bmp -p2 -R 0.138565244 -I-0.6493599 -z1.0e-3 -x0.1206000 -y0.5230000
 ${julia}-08.bmp -p2 -R 0.138565244 -I-0.6493599 -z5.0e-5 -x0.1205994 -y0.5231718
 ${julia}-09.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1 --negate -n1500
 ${julia}-10.bmp -p1 -R 1.625000000 -I-0.0020000 -b32768 --formula burnship -D --color-distance
-${julia}-11.bmp -p2 -R 6.050185307 -I 0.5000000 -b32768 --formula cos --distance=8 -negate
+${julia}-11.bmp -p2 -R 6.050185307 -I 0.5000000 -b32768 --formula cos --distance=8 --negate
 
 if test $convert = y
         then
