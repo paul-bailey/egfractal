@@ -81,6 +81,19 @@ ${mbrot}-28.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=16 
 ${mbrot}-29.bmp -b32768 --formula cos -x 1.850 -y 1.980 -z1.0e-1 --distance=8 --color-distance -p6
 ${mbrot}-30.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-6 --distance=16 -n3000 # TODO: needs work
 ${mbrot}-31.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 --distance=4 -n3000 --color-distance -p6
+${mbrot}-32.bmp -b32768 --formula poly2 -x 1.0000 -y 0.0100 -z1.0e-1 --distance=8
+${mbrot}-33.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 --distance=16 -n10000 --negate
+${mbrot}-34.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 -n10000 --distance=16 --color-distance -p2 --negate
+${mbrot}-35.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p5
+${mbrot}-36.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p6
+${mbrot}-37.bmp -b32768 -x 0.761574 -y-0.0847596 -z1.6e-3 --distance=4 --color-distance --negate
+${mbrot}-38.bmp -b32768 -x 0.761574 -y-0.0847596 -z64e-6 --distance=4 --negate
+${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 --distance=4 --color-distance -p2 --negate -n2000
+${mbrot}-40.bmp -b32768 -x 0.790000 -y-0.1500000 -z1.0e-2 --distance=4 --color-distance -p2 --negate
+${mbrot}-41.bmp -b32768 -x 0.746300 -y-0.1102000 -z5.0e-3 --distance=4 --color-distance -p2 --negate
+${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 --distance=4 --color-distance -p2 --negate
+${mbrot}-43.bmp -b32768 -x 1.250660 -y 0.0201200 -z1.7e-4 --distance=4 --color-distance -p2 --negate
+${mbrot}-44.bmp -b32768 -x 0.748000 -y-0.1000000 -z0.0014 --distance=4 --color-distance -p2 --negate
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
 ${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
@@ -94,6 +107,8 @@ ${julia}-08.bmp -p2 -R 0.138565244 -I-0.6493599 -z5.0e-5 -x0.1205994 -y0.5231718
 ${julia}-09.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1 --negate -n1500
 ${julia}-10.bmp -p1 -R 1.625000000 -I-0.0020000 -b32768 --formula burnship -D --color-distance
 ${julia}-11.bmp -p2 -R 6.050185307 -I 0.5000000 -b32768 --formula cos --distance=8 --negate
+${julia}-12.bmp -p2 -R-0.790000000 -I 0.1500000 -b32768 --distance=8 --negate
+${julia}-13.bmp -p2 -R 0.280000000 -I 0.0080000 -b32768 --distance=8 --negate
 
 if test $convert = y
         then
