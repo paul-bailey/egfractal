@@ -63,6 +63,31 @@ pow_dfml(complex_t z, complex_t c)
 }
 
 static complex_t
+poly_fml(complex_t z, complex_t c)
+{
+        int exp = pow_exp;
+        complex_t ret = { 0, 0};
+        while (exp > 0) {
+                ret = complex_add(ret, complex_pow(z, exp));
+                exp--;
+        }
+        return complex_add(c, ret);
+}
+
+static complex_t
+poly_dfml(complex_t z, complex_t c)
+{
+        int exp = pow_exp;
+        complex_t ret = { 0, 0 };
+        while (exp > 0) {
+                ret = complex_add(ret,
+                          complex_mulr(complex_pow(z, exp - 1), exp));
+                exp--;
+        }
+        return ret;
+}
+
+static complex_t
 sine_fml(complex_t z, complex_t c)
 {
         return complex_add(c, complex_sin(z));
@@ -134,22 +159,34 @@ static struct formula_t pow_formula = {
         .dfn = pow_dfml,
 };
 
+static struct formula_t poly_formula = {
+        .fn = poly_fml,
+        .dfn = poly_dfml,
+};
+
+static struct formula_t *
+parse_pow_or_poly(const char *s, struct formula_t *formula)
+{
+        char *endptr;
+        double exp;
+
+        exp = strtod(s, &endptr);
+        if (endptr == s)
+                return NULL;
+        pow_exp = exp;
+        formula->log_d = logl((long double)exp);
+        return formula;
+}
+
 const struct formula_t *
 parse_formula(const char *name)
 {
         struct lutbl_t *t;
-        if (!strncmp(name, "pow", 3)) {
-                char *endptr;
-                double exp;
-                name += 3;
-                exp = strtod(name, &endptr);
-                if (endptr == name)
-                        return NULL;
-                pow_exp = exp;
-                pow_formula.log_d = logl((long double)exp);
-                return &pow_formula;
+        if (!strncmp(name, "pow", 3))
+                return parse_pow_or_poly(&name[3], &pow_formula);
 
-        }
+        if (!strncmp(name, "poly", 4)) /* TODO: Support coefficients */
+                return parse_pow_or_poly(&name[4], &poly_formula);
 
         for (t = lut; t->name != NULL; t++) {
                 if (!strcmp(t->name, name)) {
