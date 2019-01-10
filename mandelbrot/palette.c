@@ -233,7 +233,7 @@ initialize_palette(void)
  * Works best when bailout radius and number of iterations are high.
  */
 static unsigned int
-distance_to_color_bw(mfloat_t dist, mfloat_t max)
+distance_to_color_bw(mfloat_t dist, mfloat_t min, mfloat_t max)
 {
         unsigned int magn;
 
@@ -241,7 +241,7 @@ distance_to_color_bw(mfloat_t dist, mfloat_t max)
                 return COLOR_BLACK;
 
         /* TODO: Make the root be a command-line option */
-        magn = (unsigned int)(255.0 * pow(dist / max, gbl.distance_root));
+        magn = (unsigned int)(255.0 * pow((dist-min) / (max-min), gbl.distance_root));
         if (magn > 255)
                 magn = 255;
 
@@ -250,7 +250,7 @@ distance_to_color_bw(mfloat_t dist, mfloat_t max)
 
 /* XXX: D.R.Y. violations with iteration_to_color() */
 static unsigned int
-distance_to_color_palette(mfloat_t dist, mfloat_t max)
+distance_to_color_palette(mfloat_t dist, mfloat_t min, mfloat_t max)
 {
         mfloat_t d;
         unsigned int i, v1, v2;
@@ -265,7 +265,7 @@ distance_to_color_palette(mfloat_t dist, mfloat_t max)
         assert(dist <= max);
 
         /* TODO: Use gbl.distance_root here too? */
-        d = powl(dist / max, gbl.distance_root) * (mfloat_t)NCOLOR;
+        d = powl((dist-min) / (max-min), gbl.distance_root) * (mfloat_t)NCOLOR;
         i = (int)d;
         if (i >= NCOLOR)
                 i = NCOLOR-1;
@@ -276,12 +276,12 @@ distance_to_color_palette(mfloat_t dist, mfloat_t max)
 }
 
 static unsigned int
-distance_to_color(mfloat_t dist, mfloat_t max)
+distance_to_color(mfloat_t dist, mfloat_t min, mfloat_t max)
 {
         if (gbl.color_distance)
-                return distance_to_color_palette(dist, max);
+                return distance_to_color_palette(dist, min, max);
         else
-                return distance_to_color_bw(dist, max);
+                return distance_to_color_bw(dist, min, max);
 }
 
 /*
@@ -312,7 +312,7 @@ unsigned int
 get_color(mfloat_t esc_val, mfloat_t min, mfloat_t max)
 {
         if (gbl.distance_est) {
-                return distance_to_color(esc_val, max);
+                return distance_to_color(esc_val, min, max);
         } else {
                 return iteration_to_color(esc_val);
         }
