@@ -224,6 +224,70 @@ mandelbrot_px(int row, int col)
         return ret;
 }
 
+static mfloat_t
+mbrot_eq(mfloat_t *buf, size_t size, mfloat_t *pmin, mfloat_t max)
+{
+        enum { HIST_SIZE = 64 * 1024 };
+        static unsigned long histogram[HIST_SIZE];
+        static unsigned long cdf[HIST_SIZE];
+        unsigned long cdfmax, cdfrange;
+        mfloat_t unit;
+        mfloat_t min = *pmin;
+        int i;
+
+        unit = (max - min) / (mfloat_t)HIST_SIZE;
+
+        for (i = 0; i < size; i++) {
+                int hidx;
+                if (buf[i] < 0)
+                        continue;
+                hidx = (int)((buf[i] - min) / unit);
+                if (hidx < 0)
+                        hidx = 0;
+                else if (hidx >= HIST_SIZE)
+                        hidx = HIST_SIZE;
+                histogram[hidx]++;
+        }
+
+        cdfmax = 0;
+        for (i = 0; i < HIST_SIZE; i++) {
+                cdfmax += histogram[i];
+                cdf[i] = cdfmax;
+        }
+        assert(cdfmax != cdf[0]);
+
+        /* Slumpify option */
+        for (i = 0; i < HIST_SIZE; i++) {
+                unsigned long long v = cdf[i];
+                v = (int)((double)cdfmax
+                          * pow((double)v / (double)cdfmax,
+                                gbl.equalize_root));
+                cdf[i] = v;
+        }
+
+        cdfrange = cdfmax - cdf[0];
+        for (i = 0; i < size; i++) {
+                int hidx;
+                if (buf[i] < 0)
+                        continue;
+                hidx = (int)((buf[i] - min) / unit);
+                buf[i] = (mfloat_t)(cdf[hidx] - cdf[0]) * (max-min) / (mfloat_t)cdfrange;
+        }
+
+        /* Return new max/min */
+        max = -1;
+        min = 1e16;
+        for (i = 0; i < size; i++) {
+                if (min > buf[i])
+                        min = buf[i];
+                if (max < buf[i])
+                        max = buf[i];
+        }
+
+        *pmin = min;
+        return max;
+}
+
 static void
 mandelbrot(Pxbuf *pxbuf)
 {
@@ -249,8 +313,14 @@ mandelbrot(Pxbuf *pxbuf)
                                 fflush(stdout);
                         }
                         v = mandelbrot_px(row, col);
+#if 1
+                        /* TODO: Test effect of this on older images */
+                        if (v > 0.0 && min > v)
+                                min = v;
+#else
                         if (min > v)
                                 min = v;
+#endif
                         if (max < v)
                                 max = v;
                         *ptbuf++ = v;
@@ -259,6 +329,13 @@ mandelbrot(Pxbuf *pxbuf)
         if (gbl.verbose)
                 putchar('\n');
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
+        if (gbl.have_equalize) {
+                max = mbrot_eq(tbuf, gbl.height * gbl.width, &min, max);
+                max -= min;
+                min = 0;
+                printf("min: %Lg max: %Lg (after EQ)\n",
+                       (long double)min, (long double)max);
+        }
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
@@ -268,6 +345,7 @@ mandelbrot(Pxbuf *pxbuf)
         }
         free(tbuf);
 }
+
 
 int
 main(int argc, char **argv)
