@@ -158,6 +158,23 @@ static const unsigned int palette_buffers[][NCOLOR] = { {
                 0x9f5f00, 0xa35b00, 0xa75700, 0xab5300, 0xaf4f00, 0xb34b00, 0xb74700, 0xbb4300,
                 0xbf3f00, 0xc33b00, 0xc73700, 0xcb3300, 0xcf2f00, 0xd32b00, 0xd72700, 0xdb2300,
                 0xdf1f00, 0xe31b00, 0xe71700, 0xeb1300, 0xef0f00, 0xf30b00, 0xf70700, 0xfb0300
+        }, {
+                0xffff80, 0xe0fc70, 0xd2f869, 0xc8f464, 0xc0f060, 0xb9ed5c, 0xb2ea59, 0xace656,
+                0xa6e353, 0xa1e050, 0x9cdd4e, 0x98da4c, 0x93d749, 0x8fd447, 0x8bd245, 0x87cf43,
+                0x84cd42, 0x80ca40, 0x7dc83e, 0x79c53c, 0x76c33b, 0x73c139, 0x70bf38, 0x6dbd36,
+                0x6abb35, 0x68b934, 0x65b732, 0x62b531, 0x60b330, 0x5db22e, 0x5bb02d, 0x58ae2c,
+                0x56ad2b, 0x54ab2a, 0x52aa29, 0x50a928, 0x4ea727, 0x4ba625, 0x49a524, 0x48a424,
+                0x46a223, 0x44a122, 0x42a021, 0x409f20, 0x3e9e1f, 0x3d9e1e, 0x3b9d1d, 0x399c1c,
+                0x389b1c, 0x369a1b, 0x359a1a, 0x339919, 0x329919, 0x309818, 0x2f9817, 0x2d9716,
+                0x2c9716, 0x2a9715, 0x299614, 0x289614, 0x279613, 0x259612, 0x249612, 0x239511,
+                0x229511, 0x219510, 0x209610, 0x1e960f, 0x1d960e, 0x1c960e, 0x1b960d, 0x1a970d,
+                0x19970c, 0x18970c, 0x17980b, 0x16980b, 0x16990b, 0x15990a, 0x149a0a, 0x139a09,
+                0x129b09, 0x119c08, 0x119d08, 0x109e08, 0x0f9e07, 0x0e9f07, 0x0ea007, 0x0da106,
+                0x0ca206, 0x0ca406, 0x0ba505, 0x0aa605, 0x0aa705, 0x09a904, 0x09aa04, 0x08ab04,
+                0x08ad04, 0x07ae03, 0x07b003, 0x06b203, 0x06b303, 0x05b502, 0x05b702, 0x04b902,
+                0x04bb02, 0x04bd02, 0x03bf01, 0x03c101, 0x03c301, 0x02c501, 0x02c801, 0x02ca01,
+                0x02cd01, 0x01cf00, 0x01d200, 0x01d400, 0x01d700, 0x00da00, 0x00dd00, 0x00e000,
+                0x00e300, 0x00e600, 0x00ea00, 0x00ed00, 0x00f000, 0x00f400, 0x00f800, 0x00fc00
         }
 };
 
@@ -168,7 +185,8 @@ static const unsigned int INSIDE_COLORS[] = {
         COLOR_BLACK,
         COLOR_WHITE,
         COLOR_BLACK,
-        COLOR_AMBER,
+        COLOR_BLACK,
+        COLOR_BLACK,
 };
 
 static const unsigned int *palette;
@@ -178,7 +196,15 @@ static unsigned int inside_color = NO_COLOR;
 static unsigned int
 interp_helper(unsigned int color1, unsigned int color2, mfloat_t frac)
 {
-        return color1 + (int)(frac * ((mfloat_t)color2 - (mfloat_t)color1) + 0.5);
+        int ret;
+        ret = color1 + (int)(frac * ((mfloat_t)color2 - (mfloat_t)color1) + 0.5);
+        /* Could be an overflow of 1, but should not be overflow of 2 or greater. */
+        assert(ret <= 256 && ret >= -1);
+        if (ret > 255)
+                ret = 255;
+        if (ret < 0)
+                ret = 0;
+        return ret;
 }
 
 static void
@@ -196,12 +222,10 @@ linear_interp(unsigned int color1, unsigned int color2, mfloat_t frac)
         unsigned int r2, g2, b2;
         channelize(color1, &r1, &g1, &b1);
         channelize(color2, &r2, &g2, &b2);
+        assert(frac >= 0.0L && frac < 1.0L);
         r1 = interp_helper(r1, r2, frac);
         g1 = interp_helper(g1, g2, frac);
         b1 = interp_helper(b1, b2, frac);
-        assert(r1 < 256);
-        assert(g1 < 256);
-        assert(b1 < 256);
         return TO_RGB(r1, g1, b1);
 }
 
@@ -263,9 +287,13 @@ distance_to_color_palette(mfloat_t dist, mfloat_t min, mfloat_t max)
                 return inside_color;
 
         assert(dist <= max);
+        assert(max > min);
+        assert(dist >= min);
 
         /* TODO: Use gbl.distance_root here too? */
         d = powl((dist-min) / (max-min), gbl.distance_root) * (mfloat_t)NCOLOR;
+        assert(isfinite(d));
+        assert(d >= 0.0L);
         i = (int)d;
         if (i >= NCOLOR)
                 i = NCOLOR-1;
