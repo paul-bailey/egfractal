@@ -127,7 +127,10 @@ iterate_normal(complex_t c)
         if (gbl.dither > 0) {
                 if (!!(gbl.dither & 01)) {
                         /* Smooth with distance estimate */
-                        /* FIXME: No longer true if gbl.formula != NULL */
+                        /*
+                         * FIXME: This math is no longer accurate
+                         * if we're not using z^2+c formula.
+                         */
                         mfloat_t log_zn = logl(complex_modulus2(z)) / 2.0L;
                         mfloat_t nu = logl(log_zn / gbl.log_d) / gbl.log_d;
                         if (isfinite(log_zn) && isfinite(nu))
@@ -178,6 +181,11 @@ iterate_distance(complex_t c)
                                 break;
                 }
         } else {
+                /*
+                 * Standard Mandelbrot.
+                 * Theoretically it's faster to just inline it here
+                 * rather than use gbl.formula as above.
+                 */
                 for (i = 0; i < n; i++) {
                         /* "z = z^2 + c" and "dz = 2.0 * z * dz + 1.0" */
                         complex_t ztmp = complex_add(complex_sq(z), c);
@@ -315,7 +323,7 @@ mandelbrot(Pxbuf *pxbuf)
                         v = mandelbrot_px(row, col);
 #if 1
                         /* TODO: Test effect of this on older images */
-                        if (v > 0.0 && min > v)
+                        if (v >= 0.0L && min > v)
                                 min = v;
 #else
                         if (min > v)
