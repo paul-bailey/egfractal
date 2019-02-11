@@ -6,6 +6,7 @@ verbose=""
 convert=n
 convert_type=png
 delete_current=n
+palettes_only=n
 while test $# -ne 0
 do
         case $1 in
@@ -31,6 +32,9 @@ do
         --delete)
                 delete_current=y
                 ;;
+        --palette)
+                palettes_only=y
+                ;;
         *)
                 echo "Invalid option \"$1\"">&2
                 exit 1
@@ -46,6 +50,19 @@ then
 fi
 
 test -d ${outdir} || mkdir ${outdir}
+
+do_mbrot_palette () {
+        ./mandelbrot/mandelbrot --print-palette -p${1} -o ${common_orgs} ${outdir}/mbrot-pallete-${1}.bmp
+}
+
+if test ${palettes_only} = y
+then
+  for i in `seq 1 8`
+  do
+          do_mbrot_palette $i
+  done
+  exit 0
+fi
 
 common_args="${size_opt} ${verbose}"
 
@@ -88,7 +105,7 @@ ${mbrot}-35.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distanc
 ${mbrot}-36.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p6
 ${mbrot}-37.bmp -b32768 -x 0.761574 -y-0.0847596 -z1.6e-3 --distance=4 --color-distance --negate
 ${mbrot}-38.bmp -b32768 -x 0.761574 -y-0.0847596 -z64e-6 --distance=4 --negate
-${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 --distance=4 --color-distance -p2 --negate -n2000
+${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 -d1 --color-distance -p8
 ${mbrot}-40.bmp -b32768 -x 0.790000 -y-0.1500000 -z1.0e-2 --distance=4 --color-distance -p2 --negate
 ${mbrot}-41.bmp -b32768 -x 0.746300 -y-0.1102000 -z5.0e-3 --distance=4 --color-distance -p2 --negate
 ${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 --distance=4 --color-distance -p2 --negate
