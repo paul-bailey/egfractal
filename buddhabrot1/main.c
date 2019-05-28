@@ -36,17 +36,37 @@
  * For each random point: If it's in the Mandelbrot set (determined to
  * be points that do not escape before the max number of iterations),
  * then do nothing.  If it's outside the Mandelbrot set, then trace its
- * path from f(z=0) t0 f(z=bailout).
+ * path from f(z=0) t0 f(z=bailout).  (I use the word ``trace" loosely,
+ * since the path is not necessarily continuous.)
  *
- * The path is traced with a simple histogram: an array of counters for
+ * The `trace' is done using a simple histogram: an array of counters for
  * each pixel.  For every z[i] before z == bailout, increment the counter
- * corresponding to z[i].  There are three such histograms, one for each
- * RGB channel.
+ * corresponding to z[i].  (In an analog world, the brightness of any
+ * area of the picture represents the density of the `traces" through
+ * that area, but in the digital world we can be simpler and say each
+ * pixel's brightness represents the number of times a `trace' hit that
+ * pixel, even though those hits are in fact at different points *within*
+ * the pixel, assuming a truly exclusive random-number generator.)
  *
- * (The histogram looks like a one-dimensional array in the code, but
+ * There are three such histograms, one for each RGB channel.
+ * Their counts will be different from each other for the following
+ * reasons:
+ *
+ * 1. Slightly different paths will be traced each time due to
+ *    there being different random-generator seeds for each channel.
+ * 2. The selection of which paths to include may be different because
+ *    of command-line options that allow a user to select different
+ *    bailout radii and number of iterations for each channel.
+ * 3. An additional per-channel command-line option allows user
+ *    to throw out a different number of first paths for each channel.
+ *
+ * Because of this, you can make Buddhabrot pictures that are not
+ * only black and white.
+ *
+ * The histogram looks like a one-dimensional array in the code, but
  * that's just because the dimensions are command-line options.  In
  * purpose it's really a two-dimensional array like the z plane and the
- * bitmap).
+ * bitmap.
  *
  * Optimizations:
  * --------------
