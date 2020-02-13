@@ -33,8 +33,6 @@
 
 #include "fractal_common.h"
 
-typedef long double mfloat_t;
-
 /* main.c */
 extern struct gbl_t {
         unsigned long n_iteration;
