@@ -36,7 +36,7 @@
  * For each random point: If it's in the Mandelbrot set (determined to
  * be points that do not escape before the max number of iterations),
  * then do nothing.  If it's outside the Mandelbrot set, then trace its
- * path from f(z=0) t0 f(z=bailout).  (I use the word ``trace" loosely,
+ * path from f(z=0) to f(z=bailout).  (I use the word ``trace" loosely,
  * since the path is not necessarily continuous.)
  *
  * The `trace' is done using a simple histogram: an array of counters for
@@ -88,14 +88,16 @@
  * Wanted Optimizations:
  * ---------------------
  *
- * If there's a fast way to tell if a sample is just next to, but
- * outside, the Mandelbrot set, then you wouldn't have the problem of
- * having to run close-to-max iterations twice.  But I don't know any
- * such optimization.
+ * 1. Multi-threading: see comments to iterate_r() in the code below
  *
- * I also don't know any cheats like the cardioid check for formulas
- * other than z^2+c.  This is unfortunate, since you can get some really
- * gnarly images from other such formulas, like the burning ship algo.
+ * 2. If there's a fast way to tell if a sample is just next to, but
+ *    outside, the Mandelbrot set, then you wouldn't have the problem of
+ *    having to run close-to-max iterations twice.  But I don't know any
+ *    such optimization.
+ *
+ * 3. I also don't know any cheats like the cardioid check for formulas
+ *    other than z^2+c.  This is unfortunate, since you can get some really
+ *    gnarly images from other such formulas, like the burning ship algo.
  */
 #include "fractal_common.h"
 #include <stdlib.h>
@@ -172,6 +174,29 @@ save_to_hist(unsigned long *buf, complex_t c)
                 buf[row * gbl.width + col]++;
 }
 
+/*
+ * This function runs twice - First just to see if it diverges
+ * and again to save the points of the path from @c if it does
+ * in fact diverge.
+ *
+ * Repeating this long iterative process twice sounds like it takes
+ * a long time, and it does.  One alternative is to save everything
+ * into the histogram @buf and save all the same points in a second
+ * buffer, so that we can undo our modification of @buf should the
+ * path not diverge.  However, this has experimentally proven to
+ * take much longer.  It turns out that the process of saving data
+ * into @hist (which includes the slightly mathy save_to_hist() above)
+ * is time-consuming, and it's just faster if we don't do that unless
+ * we already know the path diverges.
+ *
+ * TODO: Another option is to have a number of threads that run on
+ * different CPUs, each with its own copy of @buf, running this algo
+ * on its own subset of the plane (ie. its own series of @c arguments),
+ * and when all the threads are complete, sum all the threads' @buf's
+ * together.  It may not be useful on a quad-core Hewlett Crappard,
+ * but a more powerful computer with lots of cores and lots of RAM
+ * would benefit greatly from that.
+ */
 static void
 iterate_r(complex_t c, unsigned long *buf, int n, bool isdivergent)
 {
