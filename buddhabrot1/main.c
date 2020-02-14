@@ -263,11 +263,6 @@ inside_cardioid_or_bulb(complex_t c)
         return false;
 }
 
-struct stats_t {
-        unsigned long stdmax;
-        unsigned long stdmin;
-};
-
 /*
  * This matters most when running histogram equalization
  * FIXME: This is only useful for *local* pixel regions.
