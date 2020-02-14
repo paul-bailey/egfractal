@@ -15,7 +15,7 @@ rm -f test-driver
 rm -f build/ltmain.sh
 rm -f build/test-driver
 
-for dir in . lib mandelbrot examples julia1 buddhabrot1 bbrot2
+for dir in . lib mandelbrot examples julia1 buddhabrot1 bbrot2 mbrot2
 do
     rm -f ${dir}/*.in
     rm -f ${dir}/Makefile
