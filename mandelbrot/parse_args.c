@@ -51,6 +51,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
 		{ "formula",        required_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
                 { "equalize",       optional_argument, NULL, 5 },
+                { "rmout",          optional_argument, NULL, 6 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "smooth-option",  required_argument, NULL, 'd' },
@@ -97,6 +98,14 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                                         bad_arg("--equalize", optarg);
                         } else {
                                 gbl.equalize_root = 5.0;
+                        }
+                        break;
+                case 6:
+                        gbl.rmout = true;
+                        if (optarg != NULL) {
+                                gbl.rmout_scale = strtod(optarg, &endptr);
+                                if (endptr == optarg)
+                                        bad_arg("--rmout", optarg);
                         }
                         break;
                 case 'D':

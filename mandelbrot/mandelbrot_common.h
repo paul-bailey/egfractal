@@ -48,12 +48,14 @@ extern struct gbl_t {
         mfloat_t distance_root;
         mfloat_t log_d;
         mfloat_t equalize_root;
+        mfloat_t rmout_scale;
         unsigned int min_iteration;
         bool distance_est;
         bool verbose;
         bool negate;
         bool color_distance;
         bool have_equalize;
+        bool rmout;
         complex_t (*formula)(complex_t, complex_t);
         complex_t (*dformula)(complex_t, complex_t);
 } gbl;

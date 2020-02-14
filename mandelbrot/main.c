@@ -55,6 +55,8 @@ struct gbl_t gbl = {
         .negate         = false,
         .formula        = NULL,
         .log_d          = 0.0,
+        .rmout          = false,
+        .rmout_scale    = 3.0,
 };
 
 static const mfloat_t INSIDE = -1.0L;
@@ -297,6 +299,43 @@ mbrot_eq(mfloat_t *buf, size_t size, mfloat_t *pmin, mfloat_t max)
 }
 
 static void
+shave_outliers(mfloat_t *buf)
+{
+        mfloat_t mean, sumsq, stddev, sum, stdmin, stdmax, max;
+        int i;
+        int npx = gbl.height * gbl.width;
+
+        for (max = 0.0, sum = 0.0, i = 0; i < npx; i++) {
+                sum += buf[i];
+                if (max < buf[i])
+                        max = buf[i];
+        }
+        mean = sum / (mfloat_t)npx;
+        for (sumsq = 0.0, i = 0; i < npx; i++) {
+                mfloat_t diff = buf[i] - mean;
+                sumsq += diff * diff;
+        }
+        /* "n" instead of "n-1", because we have the whole population */
+        stddev = sqrtl(sumsq / (mfloat_t)npx);
+
+        stdmin = mean - gbl.rmout_scale * stddev;
+        stdmax = mean + gbl.rmout_scale * stddev;
+
+        if (stdmin < 0.0)
+                stdmin = 0.0;
+        if (stdmax > max)
+                stdmax = max;
+        assert(stdmax > stdmin);
+
+        for (i = 0; i < npx; i++) {
+                if (buf[i] >= 0.0 && buf[i] < stdmin)
+                        buf[i] = stdmin;
+                else if (buf[i] > stdmax)
+                        buf[i] = stdmax;
+        }
+}
+
+static void
 mandelbrot(Pxbuf *pxbuf)
 {
         int row, col;
@@ -337,6 +376,8 @@ mandelbrot(Pxbuf *pxbuf)
         if (gbl.verbose)
                 putchar('\n');
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
+        if (gbl.rmout)
+                shave_outliers(tbuf);
         if (gbl.have_equalize) {
                 max = mbrot_eq(tbuf, gbl.height * gbl.width, &min, max);
                 max -= min;
