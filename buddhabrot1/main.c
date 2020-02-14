@@ -199,6 +199,15 @@ save_to_hist(unsigned long *buf, complex_t c)
  * is time-consuming, and it's just faster if we don't do that unless
  * we already know the path diverges.
  *
+ * Unfortunately this also has to run for every channel, since
+ * different values of @n result in a larger range of pixels being
+ * set. Intuitively it seems that you could use a temporary buffer
+ * to run on all three channels for each instance of @c and the value
+ * of @n for the largets channel.  But (1) there's no way to tell
+ * which channel pixel(x,y) is for unless the temporary buffer is of
+ * bitfields, which takes a little time to calculate; and (2) you'll
+ * have to reset the temporary buffer for every. instance. of. @c.
+ *
  * TODO: Another option is to have a number of threads that run on
  * different CPUs, each with its own copy of @buf, running this algo
  * on its own subset of the plane (ie. its own series of @c arguments),
