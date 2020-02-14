@@ -66,51 +66,103 @@ fi
 
 common_args="${size_opt} ${verbose}"
 
-mbrot="./mandelbrot/mandelbrot ${common_args} -o ${outdir}/mandelbrot"
-${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
-${mbrot}-02.bmp -b32768 -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
-${mbrot}-03.bmp -b32768 -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
-${mbrot}-04.bmp -b65536 -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
-${mbrot}-05.bmp -b32768 -z1.0e-4 -D -x 0.76991000 -y 0.10949000
-${mbrot}-06.bmp -b32768 -z1.0e-6 -D -x-0.25204350 -y 0.00014850 -n3000 --negate
-${mbrot}-07.bmp -b32768 -z1.0e-6 -D -x-0.25205250 -y 0.00014590 -n100000
-${mbrot}-08.bmp -b32768 -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
-${mbrot}-09.bmp -b32768 -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
-${mbrot}-10.bmp -b32768 -z1.0e-3 -x 0.77000000 -y 0.11000000 --distance=6
-${mbrot}-11.bmp -b65536 -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
-${mbrot}-12.bmp -b65536 -z4 --formula sin --distance=8 --color-distance -p4
-${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
-${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
-${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
-${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate --distance=6 --color-distance
-${mbrot}-17.bmp -b32768 -z 1.0e-3 --formula burnship -p5 -x-0.952 -y 1.25000 --distance=16 --color-distance
-${mbrot}-18.bmp -b32768 -z 2.0e-8 -p2 -x 0.7210050 -y 0.3557445 -n 100000 --negate --distance=10 --color-distance
-${mbrot}-19.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=3 --color-distance -p6 --negate
-${mbrot}-20.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.0747 --distance=8 --color-distance -p6
-${mbrot}-21.bmp -b32768 -z 1.0e-3 --formula sin -x 6.050185307 -y0.5000 --distance=8 --color-distance -p6
-${mbrot}-22.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=4 --color-distance -p5 --negate
-${mbrot}-23.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=16 --color-distance -p6
-${mbrot}-24.bmp -b32768 --formula cos -x 1.4000 -y 1.300 -z4.0e-1 --distance=16 --negate # TODO: needs work
-${mbrot}-25.bmp -b32768 --formula cos -x 1.7000 -y 1.700 -z2.0e-1 --distance=8 #ditto
-${mbrot}-26.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-4 --distance=8 #...
-${mbrot}-27.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=8 --color-distance -p5
-${mbrot}-28.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=16 --negate
-${mbrot}-29.bmp -b32768 --formula cos -x 1.850 -y 1.980 -z1.0e-1 --distance=8 --color-distance -p6
-${mbrot}-30.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-6 --distance=16 -n3000 # TODO: needs work
-${mbrot}-31.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 --distance=4 -n3000 --color-distance -p6
-${mbrot}-32.bmp -b32768 --formula poly2 -x 1.0000 -y 0.0100 -z1.0e-1 --distance=8
-${mbrot}-33.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 --distance=16 -n10000 --negate
-${mbrot}-34.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 -n10000 --distance=16 --color-distance -p2 --negate
-${mbrot}-35.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p5
-${mbrot}-36.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p6
-${mbrot}-37.bmp -b32768 -x 0.761574 -y-0.0847596 -z1.6e-3 --distance=4 --color-distance --negate
-${mbrot}-38.bmp -b32768 -x 0.761574 -y-0.0847596 -z64e-6 --distance=4 --negate
-${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 -d1 --color-distance -p8
-${mbrot}-40.bmp -b32768 -x 0.790000 -y-0.1500000 -z1.0e-2 --distance=4 --color-distance -p2 --negate
-${mbrot}-41.bmp -b32768 -x 0.746300 -y-0.1102000 -z5.0e-3 --distance=4 --color-distance -p2 --negate
-${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 --distance=4 --color-distance -p2 --negate
-${mbrot}-43.bmp -b32768 -x 1.250660 -y 0.0201200 -z1.7e-4 --distance=4 --color-distance -p2 --negate
-${mbrot}-44.bmp -b32768 -x 0.748000 -y-0.1000000 -z0.0014 --distance=4 --color-distance -p2 --negate
+# TODO: The first set is from before --rmout was an option.
+# Since normalizing happens after the outliers were shaved off,
+# this dramatically changes the palette for these images.  Go
+# back and cherry-pick which between the two sets are better.
+if false; then
+    mbrot="./mandelbrot/mandelbrot ${common_args} -o ${outdir}/mandelbrot"
+    ${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
+    ${mbrot}-02.bmp -b32768 -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
+    ${mbrot}-03.bmp -b32768 -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
+    ${mbrot}-04.bmp -b65536 -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
+    ${mbrot}-05.bmp -b32768 -z1.0e-4 -D -x 0.76991000 -y 0.10949000
+    ${mbrot}-06.bmp -b32768 -z1.0e-6 -D -x-0.25204350 -y 0.00014850 -n3000 --negate
+    ${mbrot}-07.bmp -b32768 -z1.0e-6 -D -x-0.25205250 -y 0.00014590 -n100000
+    ${mbrot}-08.bmp -b32768 -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
+    ${mbrot}-09.bmp -b32768 -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
+    ${mbrot}-10.bmp -b32768 -z1.0e-3 -x 0.77000000 -y 0.11000000 --distance=6
+    ${mbrot}-11.bmp -b65536 -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
+    ${mbrot}-12.bmp -b65536 -z4 --formula sin --distance=8 --color-distance -p4
+    ${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
+    ${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
+    ${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
+    ${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate --distance=6 --color-distance
+    ${mbrot}-17.bmp -b32768 -z 1.0e-3 --formula burnship -p5 -x-0.952 -y 1.25000 --distance=16 --color-distance
+    ${mbrot}-18.bmp -b32768 -z 2.0e-8 -p2 -x 0.7210050 -y 0.3557445 -n 100000 --negate --distance=10 --color-distance
+    ${mbrot}-19.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=3 --color-distance -p6 --negate
+    ${mbrot}-20.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.0747 --distance=8 --color-distance -p6
+    ${mbrot}-21.bmp -b32768 -z 1.0e-3 --formula sin -x 6.050185307 -y0.5000 --distance=8 --color-distance -p6
+    ${mbrot}-22.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=4 --color-distance -p5 --negate
+    ${mbrot}-23.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 --distance=16 --color-distance -p6
+    ${mbrot}-24.bmp -b32768 --formula cos -x 1.4000 -y 1.300 -z4.0e-1 --distance=16 --negate # TODO: needs work
+    ${mbrot}-25.bmp -b32768 --formula cos -x 1.7000 -y 1.700 -z2.0e-1 --distance=8 #ditto
+    ${mbrot}-26.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-4 --distance=8 #...
+    ${mbrot}-27.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=8 --color-distance -p5
+    ${mbrot}-28.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 --distance=16 --negate
+    ${mbrot}-29.bmp -b32768 --formula cos -x 1.850 -y 1.980 -z1.0e-1 --distance=8 --color-distance -p6
+    ${mbrot}-30.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-6 --distance=16 -n3000 # TODO: needs work
+    ${mbrot}-31.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 --distance=4 -n3000 --color-distance -p6
+    ${mbrot}-32.bmp -b32768 --formula poly2 -x 1.0000 -y 0.0100 -z1.0e-1 --distance=8
+    ${mbrot}-33.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 --distance=16 -n10000 --negate
+    ${mbrot}-34.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 -n10000 --distance=16 --color-distance -p2 --negate
+    ${mbrot}-35.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p5
+    ${mbrot}-36.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 --distance=4 -n800 --color-distance -p6
+    ${mbrot}-37.bmp -b32768 -x 0.761574 -y-0.0847596 -z1.6e-3 --distance=4 --color-distance --negate
+    ${mbrot}-38.bmp -b32768 -x 0.761574 -y-0.0847596 -z64e-6 --distance=4 --negate
+    ${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 -d1 --color-distance -p8
+    ${mbrot}-40.bmp -b32768 -x 0.790000 -y-0.1500000 -z1.0e-2 --distance=4 --color-distance -p2 --negate
+    ${mbrot}-41.bmp -b32768 -x 0.746300 -y-0.1102000 -z5.0e-3 --distance=4 --color-distance -p2 --negate
+    ${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 --distance=4 --color-distance -p2 --negate
+    ${mbrot}-43.bmp -b32768 -x 1.250660 -y 0.0201200 -z1.7e-4 --distance=4 --color-distance -p2 --negate
+    ${mbrot}-44.bmp -b32768 -x 0.748000 -y-0.1000000 -z0.0014 --distance=4 --color-distance -p2 --negate
+else
+    mbrot="./mandelbrot/mandelbrot ${common_args} --rmout -o ${outdir}/mandelbrot"
+    ${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
+    ${mbrot}-02.bmp -b32768 -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
+    ${mbrot}-03.bmp -b32768 -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
+    ${mbrot}-04.bmp -b65536 -z4.0e-12 -d3 -p3 -x-0.14000524460488 -y-0.64935985788190
+    ${mbrot}-05.bmp -b32768 -z1.0e-4 -D -x 0.76991000 -y 0.10949000
+    ${mbrot}-06.bmp -b32768 -z1.0e-6 -D -x-0.25204350 -y 0.00014850 -n3000 --negate
+    ${mbrot}-07.bmp -b32768 -z1.0e-6 -D -x-0.25205250 -y 0.00014590 -n100000
+    ${mbrot}-08.bmp -b32768 -z5.0e-7 -D -x-0.25205185 -y 0.00014800 -n100000
+    ${mbrot}-09.bmp -b32768 -z5.0e-6 -D -x-0.25205000 -y 0.00014850 -n10000
+    ${mbrot}-10.bmp -b32768 -z1.0e-3 -x 0.77000000 -y 0.11000000 -D
+    ${mbrot}-11.bmp -b65536 -z1.0e-3 -D -x 0.77000000 -y 0.11000000 --color-distance -p2 --negate
+    ${mbrot}-12.bmp -b65536 -z4 --formula sin -D --color-distance -p4
+    ${mbrot}-13.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.625 -y-0.00200
+    ${mbrot}-14.bmp -b32768 -z 0.0010 --formula burnship -p1 -x 1.620 -y 0.00199
+    ${mbrot}-15.bmp -b32768 -z 0.0005 --formula burnship -p1 -x 1.624 -y-0.00100
+    ${mbrot}-16.bmp -b32768 -z 1.0e-7 --formula burnship -p2 -x 1.600 -y 0.00000 --negate -D --color-distance
+    ${mbrot}-17.bmp -b32768 -z 1.0e-3 --formula burnship -p5 -x-0.952 -y 1.25000 -D --color-distance
+    ${mbrot}-18.bmp -b32768 -z 2.0e-8 -p2 -x 0.7210050 -y 0.3557445 -n 100000 --negate -D --color-distance
+    ${mbrot}-19.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 -D --color-distance -p6 --negate
+    ${mbrot}-20.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.0747 -D --color-distance -p6
+    ${mbrot}-21.bmp -b32768 -z 1.0e-3 --formula sin -x 6.050185307 -y0.5000 -D --color-distance -p6
+    ${mbrot}-22.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 -D --color-distance -p5 --negate
+    ${mbrot}-23.bmp -b32768 -z 1.0e-4 --formula sin -x 3.141592654 -y0.1000 -D --color-distance -p6
+    ${mbrot}-24.bmp -b32768 --formula cos -x 1.4000 -y 1.300 -z4.0e-1 -D --negate # TODO: needs work
+    ${mbrot}-25.bmp -b32768 --formula cos -x 1.7000 -y 1.700 -z2.0e-1 -D #ditto
+    ${mbrot}-26.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-4 -D #...
+    ${mbrot}-27.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 -D --color-distance -p5
+    ${mbrot}-28.bmp -b32768 --formula cos -x 1.7005 -y 1.743 -z1.0e-5 -D --negate
+    ${mbrot}-29.bmp -b32768 --formula cos -x 1.850 -y 1.980 -z1.0e-1 -D --color-distance -p6
+    ${mbrot}-30.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-6 -D -n3000 # TODO: needs work
+    ${mbrot}-31.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 -D -n3000 --color-distance -p6
+    ${mbrot}-32.bmp -b32768 --formula poly2 -x 1.0000 -y 0.0100 -z1.0e-1 -D
+    ${mbrot}-33.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 -D -n10000 --negate
+    ${mbrot}-34.bmp -b32768 --formula poly2 -x 0.6000 -y 0.6302 -z1.0e-4 -n10000 -D --color-distance -p2 --negate
+    ${mbrot}-35.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 -D -n800 --color-distance -p5
+    ${mbrot}-36.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 -D -n800 --color-distance -p6
+    ${mbrot}-37.bmp -b32768 -x 0.761574 -y-0.0847596 -z1.6e-3 -D --color-distance --negate
+    ${mbrot}-38.bmp -b32768 -x 0.761574 -y-0.0847596 -z64e-6 -D --negate
+    ${mbrot}-39.bmp -b32768 -x 0.761574 -y-0.0847596 -z12.8e-6 -d1 --color-distance -p8
+    ${mbrot}-40.bmp -b32768 -x 0.790000 -y-0.1500000 -z1.0e-2 -D --color-distance -p2 --negate
+    ${mbrot}-41.bmp -b32768 -x 0.746300 -y-0.1102000 -z5.0e-3 -D --color-distance -p2 --negate
+    ${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 -D --color-distance -p2 --negate
+    ${mbrot}-43.bmp -b32768 -x 1.250660 -y 0.0201200 -z1.7e-4 -D --color-distance -p2 --negate
+    ${mbrot}-44.bmp -b32768 -x 0.748000 -y-0.1000000 -z0.0014 -D --color-distance -p2 --negate
+fi
 
 julia="./julia1/julia1 ${common_args} -o ${outdir}/julia1"
 ${julia}-01.bmp -p2 -R-0.701760000 -I-0.3842000 -b32768 -d1
