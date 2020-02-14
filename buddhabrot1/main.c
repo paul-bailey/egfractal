@@ -263,15 +263,6 @@ inside_cardioid_or_bulb(complex_t c)
         return false;
 }
 
-static void
-iterate(complex_t c, unsigned long *buf, int n)
-{
-        /* Can't check cardoid when using different formula */
-        if (!gbl.formula && inside_cardioid_or_bulb(c))
-                return;
-        iterate_r(c, buf, n, false);
-}
-
 struct stats_t {
         unsigned long stdmax;
         unsigned long stdmin;
@@ -420,8 +411,10 @@ bbrot1(Pxbuf *pxbuf)
                         printf("\e[3D%3d", npct);
                         fflush(stdout);
                 }
+                if (!gbl.formula && inside_cardioid_or_bulb(c))
+                        continue;
                 for (chan = 0; chan < nchan; chan++)
-                        iterate(c, chanbuf[chan], n[chan]);
+                        iterate_r(c, chanbuf[chan], n[chan], false);
         }
         if (gbl.verbose)
                 putchar('\n');
