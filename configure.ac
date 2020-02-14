@@ -33,6 +33,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Makefile
                  julia1/Makefile
                  buddhabrot1/Makefile
+                 bbrot2/Makefile
                  mandelbrot/Makefile])
 
 AC_OUTPUT
