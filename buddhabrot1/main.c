@@ -167,13 +167,19 @@ bad_arg(const char *type, const char *optarg)
         exit(EXIT_FAILURE);
 }
 
+/* These are set before all the iterations */
+static mfloat_t wthird, hthird;
+
 static void
 save_to_hist(unsigned long *buf, complex_t c)
 {
-        static const mfloat_t THIRD = 1.0 / 3.0;
-
-        unsigned int col = (int)((mfloat_t)gbl.width * ((c.re + 2.0) * THIRD) + 0.5);
-        unsigned int row = (int)((mfloat_t)gbl.height * ((c.im + 1.5) * THIRD) + 0.5);
+        /*
+         * REVISIT: Somehow leaving the "+0.5" in
+         * increases the speed of this operation.
+         * That's great, but why?
+         */
+        unsigned int col = (int)(wthird * (c.re + 2.0) + 0.5);
+        unsigned int row = (int)(hthird * (c.im + 1.5) + 0.5);
         if (col < gbl.width && row < gbl.height)
                 buf[row * gbl.width + col]++;
 }
@@ -368,6 +374,10 @@ bbrot1(Pxbuf *pxbuf)
         unsigned long *chanbuf[3];
         /* Since I use this all over */
         unsigned int npx =  gbl.width * gbl.height;
+
+        /* just because we know it now and it will never change */
+        wthird = gbl.width / 3.0;
+        hthird = gbl.height / 3.0;
 
         initialize_seeds(seeds);
 
