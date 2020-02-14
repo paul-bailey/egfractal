@@ -121,6 +121,7 @@ static struct gbl_t {
         mfloat_t line_y;
         mfloat_t line_x;
         double eq_exp;
+        double rmout_scale;
         unsigned long points;
         bool singlechan;
         bool do_hist;
@@ -128,6 +129,7 @@ static struct gbl_t {
         bool use_line_y;
         bool use_line_x;
         bool negate;
+        bool rmout;
         complex_t (*formula)(complex_t, complex_t);
 } gbl = {
         .n_red      = 5000,
@@ -146,6 +148,8 @@ static struct gbl_t {
         .use_line_x = false,
         .negate     = false,
         .formula    = NULL,
+        .rmout_scale = 3.0,
+        .rmout      = false,
 };
 
 /* Error helpers */
@@ -268,12 +272,74 @@ iterate(complex_t c, unsigned long *buf, int n)
         iterate_r(c, buf, n, false);
 }
 
+struct stats_t {
+        unsigned long stdmax;
+        unsigned long stdmin;
+};
+
+/*
+ * This matters most when running histogram equalization
+ * FIXME: This is only useful for *local* pixel regions.
+ */
+static void
+shave_outliers(unsigned long *buf, unsigned int npx)
+{
+        double mean;
+        double sumsq;
+        double stddev;
+        unsigned long sum, stdmin, stdmax, max;
+        int i;
+        for (max = 0, sum = 0, i = 0; i < npx; i++) {
+                sum += buf[i];
+                if (max < buf[i])
+                        max = buf[i];
+        }
+        mean = (double)sum / (double)npx;
+        for (sumsq = 0.0, i = 0; i < npx; i++) {
+                double diff = (double)buf[i] - mean;
+                sumsq += diff * diff;
+        }
+        /* "n" instead of "n-1", because we have the whole population */
+        stddev = sqrt(sumsq / (double)npx);
+
+        /* define "outlier as 3 time the standard deviation */
+        stdmin = (unsigned long)(mean - gbl.rmout_scale * stddev);
+        stdmax = (unsigned long)(mean + gbl.rmout_scale * stddev);
+
+        /*
+         * We might not be following normal distribution,
+         * so make sure we don't go below zero.
+         */
+        if ((long)stdmin < 0) {
+                /*
+                 * XXX REVISIT: Should stdmax be brought in
+                 * by the same amount?
+                 */
+                stdmin = 0;
+        }
+        if (stdmax > max)
+                stdmax = max;
+
+        assert(stdmax > stdmin);
+
+        for (i = 0; i < npx; i++) {
+                if (buf[i] < stdmin) {
+                        buf[i] = stdmin;
+                } else if (buf[i] > stdmax) {
+                        buf[i] = stdmax;
+                }
+        }
+}
+
 static void
 normalize(unsigned long *buf, unsigned int npx, unsigned long new_max)
 {
         int i;
-        unsigned int max = 0L;
-        for (i = 0; i < npx; i++) {
+        unsigned int max;
+
+        if (gbl.rmout)
+                shave_outliers(buf, npx);
+        for (max = 0L, i = 0; i < npx; i++) {
                 if (max < buf[i])
                         max = buf[i];
         }
@@ -391,6 +457,12 @@ bbrot1(Pxbuf *pxbuf)
                 }
 
         }
+
+        /*
+         * XXX REVISIT: equalization looks terribly grainy if done
+         * after `normalizing' the array to [0:255].  Find a better
+         * equalization routine while the array is still [0:#hits].
+         */
         if (gbl.do_hist)
                 pxbuf_eq(pxbuf, gbl.eq_exp, true);
         if (gbl.negate)
@@ -408,6 +480,7 @@ parse_args(int argc, char **argv)
                 { "histogram",      optional_argument, NULL, 3 },
                 { "negate",         no_argument,       NULL, 4 },
                 { "formula",        required_argument, NULL, 5 },
+                { "rmout",          optional_argument, NULL, 6 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
@@ -460,6 +533,14 @@ parse_args(int argc, char **argv)
                         /* buddhabrot doesn't need derivative or order. */
                         break;
                     }
+                case 6:
+                        gbl.rmout = true;
+                        if (optarg != NULL) {
+                                gbl.rmout_scale = strtod(optarg, &endptr);
+                                if (endptr == optarg)
+                                        bad_arg("--rmout", optarg);
+                        }
+                        break;
                 case 'B':
                         gbl.bailout = strtold(optarg, &endptr);
                         if (endptr == optarg)
