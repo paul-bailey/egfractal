@@ -170,7 +170,7 @@ bad_arg(const char *type, const char *optarg)
 /* These are set before all the iterations */
 static mfloat_t wthird, hthird;
 
-static void
+static inline void __attribute__((always_inline))
 save_to_hist(unsigned long *buf, complex_t c)
 {
         /*
