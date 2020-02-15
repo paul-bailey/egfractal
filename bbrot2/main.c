@@ -131,6 +131,7 @@ struct params_t {
         int height;
         int width;
         int min;
+        int nthread;
         mfloat_t bailout;
         mfloat_t bailsqu;
         mfloat_t line_y;
@@ -397,17 +398,16 @@ static void
 bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 int nchan, int npx)
 {
-        /* TODO: Make this a user parameter */
-        enum { NTHREAD = 4 };
-
         struct thread_info_t *ti;
-        pthread_t id[NTHREAD];
+        pthread_t *id;
         pthread_attr_t attr;
+        int nthread = params->nthread;
         size_t bufsize = sizeof(unsigned long) * npx * nchan;
         int i, res;
 
-        ti = malloc(sizeof(*ti) * NTHREAD);
-        if (!ti)
+        id = malloc(sizeof(*id) * nthread);
+        ti = malloc(sizeof(*ti) * nthread);
+        if (!ti || !id)
                 oom();
 
         res = pthread_attr_init(&attr);
@@ -415,14 +415,14 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 perror("pthread_attr_init error");
                 exit(EXIT_FAILURE);
         }
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 unsigned long *chanbase = malloc(bufsize);
                 if (!chanbase)
                         oom();
                 memset(chanbase, 0, bufsize);
 
-                /* XXX This assumes points is a multiple of NTHREAD */
-                ti[i].points            = params->points / NTHREAD;
+                /* XXX This assumes points is a multiple of nthread */
+                ti[i].points            = params->points / nthread;
                 ti[i].width             = params->width;
                 ti[i].height            = params->height;
                 ti[i].nchan             = nchan;
@@ -437,12 +437,12 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 ti[i].wthird            = params->width / 3.0;
                 ti[i].hthird            = params->height / 3.0;
                 ti[i].bailsqu           = params->bailsqu;
+                ti[i].formula           = params->formula;
                 /*
                  * This initializes to different
                  * values for each set of seeds.
                  */
                 initialize_seeds(ti[i].seeds);
-                ti[i].formula   = params->formula;
 
                 res = pthread_create(&id[i], &attr,
                                 &bbrot_thread, &ti[i]);
@@ -457,7 +457,7 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 perror("pthread_attr_destroy error");
                 exit(EXIT_FAILURE);
         }
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 void *s;
                 int res = pthread_join(id[i], &s);
                 if (res != 0 || s != NULL) {
@@ -474,13 +474,15 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
          * all be different.
          */
         memset(sumbuf, 0, bufsize);
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 int j;
                 unsigned long *chanbase = ti[i]._chanbuf_base;
                 for (j = 0; j < npx * nchan; j++)
                         sumbuf[j] += chanbase[j];
                 free(ti[i]._chanbuf_base);
         }
+        free(id);
+        free(ti);
 }
 
 static void
@@ -559,6 +561,7 @@ parse_args(int argc, char **argv, struct params_t *params)
                 { "negate",         no_argument,       NULL, 4 },
                 { "formula",        required_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
+                { "nthread",        required_argument, NULL, 7 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
@@ -574,6 +577,7 @@ parse_args(int argc, char **argv, struct params_t *params)
         params->height     = 600;
         params->width      = 600;
         params->min        = 3;
+        params->nthread    = 4;
         params->bailsqu    = 4.0;
         params->bailout    = 2.0;
         params->points     = 500000;
@@ -638,6 +642,16 @@ parse_args(int argc, char **argv, struct params_t *params)
                                 params->rmout_scale = strtod(optarg, &endptr);
                                 if (endptr == optarg)
                                         bad_arg("--rmout", optarg);
+                        }
+                        break;
+                case 7:
+                        params->nthread = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("--nthread", optarg);
+                        /* warn user they're being stupid */
+                        if (params->nthread > 20) {
+                                fprintf(stderr, "%d threads! You cray!\n",
+                                        params->nthread);
                         }
                         break;
                 case 'B':
