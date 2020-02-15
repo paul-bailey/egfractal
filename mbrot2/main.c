@@ -40,6 +40,7 @@
 
 struct gbl_t gbl = {
         .n_iteration    = 1000,
+        .nthread        = 4,
         .dither         = 0,
         .height         = 600,
         .width          = 600,
@@ -170,19 +171,19 @@ shave_outliers(mfloat_t *buf)
 }
 
 void
-mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
+mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
 {
-        enum { NTHREAD = 4 };
-        int nrows = gbl.height / NTHREAD;
+        int nrows = gbl.height / nthread;
         int rowstart = 0;
         int res;
         int i;
         struct thread_info_t *ti;
-        pthread_t id[NTHREAD];
+        pthread_t *id;
         pthread_attr_t attr;
 
-        ti = malloc(sizeof(*ti) * NTHREAD);
-        if (!ti)
+        id = malloc(sizeof(*id) * nthread);
+        ti = malloc(sizeof(*ti) * nthread);
+        if (!ti || !id)
                 oom();
 
         res = pthread_attr_init(&attr);
@@ -195,7 +196,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
          * TODO: Call mbrot_thread.
          * Split up by row, NOT colum!
          */
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 ti[i].min          = 1.0e16;
                 ti[i].max          = 0.0;
                 ti[i].bailoutsqu   = gbl.bailoutsqu;
@@ -203,7 +204,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
                 ti[i].distance_est = gbl.distance_est;
                 ti[i].dither       = gbl.dither;
                 ti[i].rowstart     = rowstart;
-                ti[i].rowend       = (i == NTHREAD-1)
+                ti[i].rowend       = (i == nthread-1)
                                     ? gbl.height : rowstart + nrows;
 
 #if OLD_XY_TO_COMPLEX
@@ -241,7 +242,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
                 perror("pthread_attr_destroy error");
                 exit(EXIT_FAILURE);
         }
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 void *s;
                 int res = pthread_join(id[i], &s);
                 if (res != 0 || s != NULL) {
@@ -259,7 +260,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
         if (max)
                 *max = 0.0;
         rowstart = 0;
-        for (i = 0; i < NTHREAD; i++) {
+        for (i = 0; i < nthread; i++) {
                 mfloat_t *dst = &tbuf[rowstart * gbl.width];
                 memcpy(dst, ti[i].buf, ti[i].bufsize);
                 if (min && *min > ti[i].min)
@@ -271,6 +272,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max)
                 rowstart += nrows;
         }
         free(ti);
+        free(id);
 }
 
 static void
@@ -283,7 +285,7 @@ mandelbrot(Pxbuf *pxbuf)
         if (!tbuf)
                 oom();
 
-        mbrot_get_data(tbuf, &min, &max);
+        mbrot_get_data(tbuf, &min, &max, gbl.nthread);
 
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
         if (gbl.rmout)

@@ -52,6 +52,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 { "color-distance", no_argument,       NULL, 4 },
                 { "equalize",       optional_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
+                { "nthread",        required_argument, NULL, 7 },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "smooth-option",  required_argument, NULL, 'd' },
@@ -106,6 +107,16 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                                 gbl.rmout_scale = strtod(optarg, &endptr);
                                 if (endptr == optarg)
                                         bad_arg("--rmout", optarg);
+                        }
+                        break;
+                case 7:
+                        gbl.nthread = strtoul(optarg, &endptr, 0);
+                        if (endptr == optarg)
+                                bad_arg("--nthread", optarg);
+                        /* warn user they're being stupid */
+                        if (gbl.nthread > 20) {
+                                fprintf(stderr, "%d threads! You cray!\n",
+                                        gbl.nthread);
                         }
                         break;
                 case 'D':
