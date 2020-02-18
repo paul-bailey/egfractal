@@ -27,6 +27,14 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * TODO list:
+ * ----------
+ *
+ * - This does not evenly distribute the workflow between different
+ *   threads, because different parts of the image have different levels
+ *   of complexity, and in ways that cannot be predicted in advance.
+ *   Reduce this by interleaving each threads' row selection.
  */
 #include "mandelbrot_common.h"
 #include "fractal_common.h"
@@ -192,10 +200,6 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 exit(EXIT_FAILURE);
         }
 
-        /*
-         * TODO: Call mbrot_thread.
-         * Split up by row, NOT colum!
-         */
         for (i = 0; i < nthread; i++) {
                 ti[i].min          = 1.0e16;
                 ti[i].max          = 0.0;

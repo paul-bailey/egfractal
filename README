@@ -35,23 +35,31 @@ I do not test it much for portability.
 I try to make at least the C code be as generally POSIXive as possible,
 though I do use some Gnu-specifics like ``getopt_long`` and such.
 
-This was written in C because (1)
-I’m not some blockheaded Bracegirdle from Harbottle, and (2)
-some of the algorithms can be very very long,
-especially when generating Buddhabrot images.
-With even the fastest byte-code languages like Python
-you get something that feels like a cross between
-the DMV, a laundromat, and a movie’s underwater scene.
-You can feel the difference.
-Since **egfractal** programs
-only make system calls before and after the big algorithm
-(unless ``--verbose`` is used),
-and since it’s entirely single-threaded,
-Cygwin should be about the same as fast as other environments.
-(But because it dereferences hundreds of megabytes of memory,
-maybe not...
-if you know more about how Cygwin manages large address spaces than I do,
-edit this paragraph and send me a pull request.)
+You need POSIX threads (``<pthread.h>``) to be supported on your
+system to build ``mbrot2`` and  ``bbrot2``.  The only difference
+between these and their non-pthreads counterparts is in the speed
+at which they render if run on a multi-core system, and in that
+they no longer do anything for the ``--verbose`` argument.
+
+Optimizations
+-------------
+
+``mbrot2`` and ``bbrot2`` use POSIX threads to split up the
+workload over different parts of the image to render.  By
+default, four threads are created.  To use more or less, use
+the ``--nthread`` option.  I assume that for this to be useful
+you need more *cores* than the number of threads --
+hyperthreading isn't very useful,
+since the only system resource being used is RAM
+(**TODO**: run an actual physical test of this on a
+hyperthreaded system); no system calls are being made
+during the big-long-multi-threaded-algorithm part of the programs.
+
+``mbrot2`` splits up the workload by selecting different parts
+of the image to render for different threads.  Since ``bbrot2``
+"traces the path," it splits up the workload by selecting
+different starting points of the image to render for different
+threads.
 
 This was not written for MSDN.
 Frankly I can’t even figure out
@@ -62,9 +70,7 @@ System Requirements
 -------------------
 
 All you really need is a Unix-like environment and probably the Gnu
-version of libc.  This software doesn't (yet) try to take over a GPU or
-set priority or CPU affinity or anything fancy like that, so don't expect
-a 28-core beast to run this any faster than a regular computer.
+version of libc.
 
 For best performance, use a machine with enough RAM for the program to
 allocate without having to swap.  How much RAM does the software use?
@@ -74,6 +80,26 @@ example, in ``buddhabrot1``, each RGB channel has an array of
 a similar array of ``long double`` (quad double, depending on compiler),
 in addition to... a few other arrays.  For a large 6000x6000 bitmap,
 a program could take up to two or three hundred megabytes of RAM.
+
+System Requirements for mbrot2 and bbrot2
+-----------------------------------------
+
+``mbrot2`` and ``bbrot2`` use POSIX threads to increase execution time.
+They take a "--nthread N" option (where N is four if the option
+is not provided). Don't use N greater than the number of cores,
+or you will lose performance again.  (Hyperthreading isn't very
+useful, since the only resource being used during the multi-threaded
+part of the program is just large chunks of RAM.)
+
+Also, the amount of RAM used is approximately the amount used
+in their non-threaded counterparts (``mandelbrot`` and ``buddhabrot1``)
+plus that times the number threads.  So don't use these programs
+if you don't have the RAM to prevent swapping, or you're missing
+the point.
+
+:TODO: Configure so that these programs are skipped on systems
+that don't support ``-lpthread``.  Otherwise the whole source
+tree will fail to compile.
 
 Building
 --------
