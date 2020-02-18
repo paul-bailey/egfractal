@@ -20,6 +20,11 @@ I added it to reduce confusion with other software
 with “fractal” in its name;
 it was not intended as some sort of impudent proprietary claim.
 
+**TODO** Change names of ``mandelbrot``, ``buddhabrot1``,
+``mbrot2``, ``julia1``, and ``bbrot2``, to be consistent
+with each other and to not have names that'll liley conflict
+with someone else's programs.
+
 Licensing
 ---------
 
@@ -50,10 +55,12 @@ default, four threads are created.  To use more or less, use
 the ``--nthread`` option.  I assume that for this to be useful
 you need more *cores* than the number of threads --
 hyperthreading isn't very useful,
-since the only system resource being used is RAM
-(**TODO**: run an actual physical test of this on a
-hyperthreaded system); no system calls are being made
+since the only system resource being used is RAM;
+no system calls are being made
 during the big-long-multi-threaded-algorithm part of the programs.
+
+:TODO: Run an actual physical test of the above statement
+on a hyperthread-able machine and update this README.
 
 ``mbrot2`` splits up the workload by selecting different parts
 of the image to render for different threads.  Since ``bbrot2``
@@ -84,18 +91,12 @@ a program could take up to two or three hundred megabytes of RAM.
 System Requirements for mbrot2 and bbrot2
 -----------------------------------------
 
-``mbrot2`` and ``bbrot2`` use POSIX threads to increase execution time.
-They take a "--nthread N" option (where N is four if the option
-is not provided). Don't use N greater than the number of cores,
-or you will lose performance again.  (Hyperthreading isn't very
-useful, since the only resource being used during the multi-threaded
-part of the program is just large chunks of RAM.)
-
-Also, the amount of RAM used is approximately the amount used
-in their non-threaded counterparts (``mandelbrot`` and ``buddhabrot1``)
-plus that times the number threads.  So don't use these programs
-if you don't have the RAM to prevent swapping, or you're missing
-the point.
+Besides being able to support POSIX threads, you need way more RAM
+to run ``mbrot2`` and ``bbrot2`` -- approximately the amount used
+in their non-threaded counterparts (``mandelbrot`` and ``buddhabrot1``),
+multiplied by the number of threads plus one.  So don't use these
+programs if you don't have the RAM to prevent swapping, or you're
+totally missing the point.
 
 :TODO: Configure so that these programs are skipped on systems
 that don't support ``-lpthread``.  Otherwise the whole source
