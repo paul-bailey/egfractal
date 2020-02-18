@@ -196,30 +196,14 @@ mandelbrot_px(int row, int col, struct thread_info_t *ti)
         return ret;
 }
 
-#if 0
-static void
-dbg(struct thread_info_t *ti)
-{
-        complex_t cstart = xy_to_complex(ti->rowstart, ti->colstart, ti);
-        complex_t cend = xy_to_complex(ti->rowend, ti->colend, ti);
-
-        printf("Rows=[%d,%d], cols=[%d,%d], start at [%Lg, %Lg], end at [%Lg,%Lg]\n",
-                ti->rowstart, ti->rowend, ti->colstart, ti->colend,
-                cstart.re, cstart.im, cend.re, cend.im);
-}
-#else
-# define  dbg(...) do { (void)0; } while (0)
-#endif
-
 void *
 mbrot_thread(void *arg)
 {
         struct thread_info_t *ti = (struct thread_info_t *)arg;
         int row, col;
 
-        dbg(ti);
         mfloat_t *pbuf = ti->buf;
-        for (row = ti->rowstart; row < ti->rowend; row++) {
+        for (row = ti->rowstart; row < ti->rowend; row += ti->skip) {
                 for (col = ti->colstart; col < ti->colend; col++) {
                         mfloat_t v;
                         v = mandelbrot_px(row, col, ti);

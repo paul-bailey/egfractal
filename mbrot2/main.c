@@ -182,9 +182,7 @@ void
 mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
 {
         int nrows = gbl.height / nthread;
-        int rowstart = 0;
-        int res;
-        int i;
+        int res, i;
         struct thread_info_t *ti;
         pthread_t *id;
         pthread_attr_t attr;
@@ -193,6 +191,25 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
         ti = malloc(sizeof(*ti) * nthread);
         if (!ti || !id)
                 oom();
+
+        if (nrows <= 0) {
+                fprintf(stderr,
+                        "Error: height cannot be more than "
+                        "the number of threads\n");
+                exit(EXIT_FAILURE);
+        }
+
+        if (nrows * nthread != gbl.height) {
+                fprintf(stderr,
+                        "Warning: Cannot create image of height=%u;"
+                        " instead cropping to height=%u\n",
+                        gbl.height, nrows * nthread);
+                /*
+                 * No need to realloc tbuf, because for int,
+                 * (a / b) * b <= a, always.
+                 */
+                gbl.height = nrows * nthread;
+        }
 
         res = pthread_attr_init(&attr);
         if (res != 0) {
@@ -207,9 +224,9 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 ti[i].log_d        = gbl.log_d;
                 ti[i].distance_est = gbl.distance_est;
                 ti[i].dither       = gbl.dither;
-                ti[i].rowstart     = rowstart;
-                ti[i].rowend       = (i == nthread-1)
-                                    ? gbl.height : rowstart + nrows;
+                ti[i].skip         = nthread;
+                ti[i].rowstart     = i;
+                ti[i].rowend       = gbl.height;
 
 #if OLD_XY_TO_COMPLEX
                 ti[i].height       = gbl.height;
@@ -227,8 +244,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 ti[i].h4 = 4.0L * gbl.zoom_pct / (mfloat_t)gbl.height;
                 ti[i].zx = 2.0L * gbl.zoom_pct - gbl.zoom_xoffs;
                 ti[i].zy = 2.0L * gbl.zoom_pct - gbl.zoom_yoffs;
-                ti[i].bufsize = sizeof(mfloat_t) * gbl.width
-                                * (ti[i].rowend - rowstart);
+                ti[i].bufsize = sizeof(mfloat_t) * gbl.width * nrows;
                 ti[i].buf = malloc(ti[i].bufsize);
                 if (!ti[i].buf)
                         oom();
@@ -238,8 +254,6 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                         perror("pthread_create error");
                         exit(EXIT_FAILURE);
                 }
-
-                rowstart += nrows;
         }
         res = pthread_attr_destroy(&attr);
         if (res != 0) {
@@ -256,24 +270,25 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 }
         }
 
-        /*
-         * Combine the threads' buffers.
-         */
+        /* Combine the threads' interleaved buffers */
         if (min)
                 *min = 1.0e16;
         if (max)
                 *max = 0.0;
-        rowstart = 0;
         for (i = 0; i < nthread; i++) {
-                mfloat_t *dst = &tbuf[rowstart * gbl.width];
-                memcpy(dst, ti[i].buf, ti[i].bufsize);
+                int row, col;
+                mfloat_t *src = ti[i].buf;
+                for (row = i; row < gbl.height; row += nthread) {
+                        mfloat_t *dst = &tbuf[row * gbl.width];
+                        for(col = 0; col < gbl.width; col++)
+                                *dst++ = *src++;
+                }
                 if (min && *min > ti[i].min)
                         *min = ti[i].min;
                 if (max && *max < ti[i].max)
                         *max = ti[i].max;
 
                 free(ti[i].buf);
-                rowstart += nrows;
         }
         free(ti);
         free(id);

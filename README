@@ -135,6 +135,22 @@ Using the Programs
 
 :TODO: Add ``man`` pages and mention them here.
 
+Known Bugs
+----------
+
+The algorithms for equalization are very rudimentary.
+Also, something about the distance-to-color selection isn't very
+scalable when changing the ``-h`` and ``-w`` options for what is
+otherwise the same image tend to result in images fading out as
+they get bigger, and statistical outliers are more pronounced when
+the images get smaller (perhaps because a single pixel is given
+more importance in smaller images, resulting in sophisticated
+surfaces losing their subtlety).
+
+Basically, once you find the image you want to render, it's
+best to turn off any equalization option and just render it
+as-is, then fix it up in a program like Photoshop.
+
 Gallery
 -------
 
