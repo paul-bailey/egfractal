@@ -27,14 +27,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * TODO list:
- * ----------
- *
- * - This does not evenly distribute the workflow between different
- *   threads, because different parts of the image have different levels
- *   of complexity, and in ways that cannot be predicted in advance.
- *   Reduce this by interleaving each threads' row selection.
  */
 #include "mandelbrot_common.h"
 #include "fractal_common.h"
