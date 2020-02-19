@@ -207,7 +207,10 @@ inside_cardioid_or_bulb(complex_t c)
 
 /*
  * This matters most when running histogram equalization
- * FIXME: This is only useful for *local* pixel regions.
+ *
+ * FIXME: Outliers may be different for different channels!
+ * This needs to account for that, because as-is, it's rebalancing
+ * the red, green, and blue levels.
  */
 static void
 shave_outliers(unsigned long *buf, unsigned int npx, double rmout_scale)
