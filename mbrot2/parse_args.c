@@ -187,6 +187,9 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         exit(EXIT_FAILURE);
                 }
         }
+
+        if (!EGFRACTAL_MULTITHREADED)
+                gbl.nthread = 1;
 }
 
 

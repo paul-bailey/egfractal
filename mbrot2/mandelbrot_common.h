@@ -31,7 +31,12 @@
 #ifndef MANDELBROT_COMMON_H
 #define MANDELBROT_COMMON_H
 
+#include "config.h"
 #include "fractal_common.h"
+
+#ifndef EGFRACTAL_MULTITHREADED
+# define EGFRACTAL_MULTITHREADED 0
+#endif
 
 /* main.c */
 extern struct gbl_t {

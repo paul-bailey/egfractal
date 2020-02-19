@@ -35,8 +35,10 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include <pthread.h>
 #include <errno.h>
+#if EGFRACTAL_MULTITHREADED
+#include <pthread.h>
+#endif
 
 struct gbl_t gbl = {
         .n_iteration    = 1000,
@@ -170,18 +172,111 @@ shave_outliers(mfloat_t *buf)
         }
 }
 
+#if EGFRACTAL_MULTITHREADED
+
+/* XXX Place up at top of file */
+struct thread_helper_t {
+        pthread_t *id;
+        pthread_attr_t attr;
+};
+
+static void
+init_thread_helper(struct thread_helper_t *helper, int nthread)
+{
+        helper->id = malloc(sizeof(*helper->id) * nthread);
+        if (!helper->id)
+                oom();
+        if (pthread_attr_init(&helper->attr) != 0) {
+                perror("pthread_attr_init error");
+                exit(EXIT_FAILURE);
+        }
+}
+
+static void
+join_threads(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int nthread)
+{
+        int i;
+        int res = pthread_attr_destroy(&helper->attr);
+        if (res != 0) {
+                perror("pthread_attr_destroy error");
+                exit(EXIT_FAILURE);
+        }
+        for (i = 0; i < nthread; i++) {
+                void *s;
+                res = pthread_join(helper->id[i], &s);
+                if (res != 0 || s != NULL) {
+                        fprintf(stderr, "pthread_join[%d] failed (%s)\n",
+                                i, strerror(errno));
+                        fprintf(stderr, "Continuing anyway\n");
+                }
+        }
+
+}
+
+static void
+create_thread(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int threadno)
+{
+        int res = pthread_create(&helper->id[threadno],
+                        &helper->attr, &mbrot_thread, &ti[threadno]);
+        if (res != 0) {
+                perror("pthread_create error");
+                exit(EXIT_FAILURE);
+        }
+}
+
+static void
+free_thread_helper(struct thread_helper_t *helper)
+{
+        free(helper->id);
+}
+
+#else /* !EGFRACTAL_MULTITHREADED */
+
+struct thread_helper_t {
+        int dummy;
+};
+
+static void
+init_thread_helper(struct thread_helper_t *helper, int nthread)
+{
+        return;
+}
+
+static void
+join_threads(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int nthread)
+{
+        /* Only one thread, so call it directly */
+        mbrot_thread(&ti[0]);
+}
+
+static void
+create_thread(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int threadno)
+{
+        return;
+}
+
+static void
+free_thread_helper(struct thread_helper_t *helper)
+{
+        return;
+}
+
+#endif /* !EGFRACTAL_MULTITHREADED */
+
 void
 mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
 {
         int nrows = gbl.height / nthread;
-        int res, i;
+        int i;
         struct thread_info_t *ti;
-        pthread_t *id;
-        pthread_attr_t attr;
+        struct thread_helper_t helper;
 
-        id = malloc(sizeof(*id) * nthread);
         ti = malloc(sizeof(*ti) * nthread);
-        if (!ti || !id)
+        if (!ti)
                 oom();
 
         if (nrows <= 0) {
@@ -203,11 +298,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 gbl.height = nrows * nthread;
         }
 
-        res = pthread_attr_init(&attr);
-        if (res != 0) {
-                perror("pthread_attr_init error");
-                exit(EXIT_FAILURE);
-        }
+        init_thread_helper(&helper, nthread);
 
         for (i = 0; i < nthread; i++) {
                 ti[i].min          = 1.0e16;
@@ -240,27 +331,10 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 ti[i].buf = malloc(ti[i].bufsize);
                 if (!ti[i].buf)
                         oom();
-                res = pthread_create(&id[i], &attr,
-                                     &mbrot_thread, &ti[i]);
-                if (res != 0) {
-                        perror("pthread_create error");
-                        exit(EXIT_FAILURE);
-                }
+
+                create_thread(&helper, ti, i);
         }
-        res = pthread_attr_destroy(&attr);
-        if (res != 0) {
-                perror("pthread_attr_destroy error");
-                exit(EXIT_FAILURE);
-        }
-        for (i = 0; i < nthread; i++) {
-                void *s;
-                int res = pthread_join(id[i], &s);
-                if (res != 0 || s != NULL) {
-                        fprintf(stderr, "pthread_join[%d] failed (%s)\n",
-                                i, strerror(errno));
-                        exit(EXIT_FAILURE);
-                }
-        }
+        join_threads(&helper, ti, nthread);
 
         /* Combine the threads' interleaved buffers */
         if (min)
@@ -283,7 +357,7 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
                 free(ti[i].buf);
         }
         free(ti);
-        free(id);
+        free_thread_helper(&helper);
 }
 
 static void
