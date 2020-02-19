@@ -411,6 +411,10 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 ti[i].hthird            = params->height / 3.0;
                 ti[i].bailsqu           = params->bailsqu;
                 ti[i].formula           = params->formula;
+                ti[i].line_x            = params->line_x;
+                ti[i].line_y            = params->line_y;
+                ti[i].use_line_x        = params->use_line_x;
+                ti[i].use_line_y        = params->use_line_y;
                 /*
                  * This initializes to different
                  * values for each set of seeds.
@@ -541,6 +545,8 @@ parse_args(int argc, char **argv, struct params_t *params)
         params->verbose    = false;
         params->use_line_y = false;
         params->use_line_x = false;
+        params->line_x     = 0.0;
+        params->line_y     = 0.0;
         params->negate     = false;
         params->formula    = NULL;
         params->rmout_scale = 3.0;

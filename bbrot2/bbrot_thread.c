@@ -130,10 +130,18 @@ bbrot_thread(void *arg)
                 complex_t c;
                 int chan;
 
-                s48_x = rand48_il(s48_x);
-                s48_y = rand48_il(s48_y);
-                c.re = (double)s48_x * NORM3 - 2.0;
-                c.im = (double)s48_y * NORM3 - 1.5;
+                if (ti->use_line_x) {
+                        c.re = ti->line_x;
+                } else {
+                        s48_x = rand48_il(s48_x);
+                        c.re = (double)s48_x * NORM3 - 2.0;
+                }
+                if (ti->use_line_y) {
+                        c.im = ti->line_y;
+                } else {
+                        s48_y = rand48_il(s48_y);
+                        c.im = (double)s48_y * NORM3 - 1.5;
+                }
                 if (!ti->formula && inside_cardioid_or_bulb(c))
                         continue;
                 for (chan = 0; chan < ti->nchan; chan++) {
