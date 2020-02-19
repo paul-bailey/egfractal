@@ -37,8 +37,22 @@ complex_t
 complex_sin(complex_t c)
 {
         complex_t ret;
-        ret.re = sinl(c.re) * coshl(c.im);
-        ret.im = cosl(c.re) * sinhl(c.im);
+        mfloat_t imcosh, imsinh;
+
+        /*
+         * ret.re = sinl(c.re) * coshl(c.im);
+         * ret.im = cosl(c.re) * sinhl(c.im);
+         *
+         * We can speed this up ever so slightly, because
+         * exp() is faster than sinh(), and we know that
+         *      sinh(x) = e^x - cosh(x)
+         */
+        imcosh = cosh(c.im);
+        imsinh = exp(c.im) - imcosh;
+
+        /* TODO: is sqrt(1 - ret.re * ret.re) faster? */
+        ret.re = sin(c.re) * imcosh;
+        ret.im = cos(c.re) * imsinh;
         return ret;
 }
 
@@ -47,8 +61,21 @@ complex_t
 complex_cos(complex_t c)
 {
         complex_t ret;
-        ret.re = cosl(c.re) * coshl(c.im);
-        ret.im = sinl(c.re) * sinhl(c.im);
+        mfloat_t imcosh, imsinh;
+
+        /*
+         * ret.re = cosl(c.re) * coshl(c.im);
+         * ret.im = sinl(c.re) * sinhl(c.im);
+         *
+         * We can speed this up ever so slightly, because
+         * exp() is faster than sinh(), and we know that
+         *      sinh(x) = e^x - cosh(x)
+         */
+        imcosh = cosh(c.im);
+        imsinh = exp(c.im) - imcosh;
+
+        ret.re = cos(c.re) * imcosh;
+        ret.im = sin(c.re) * imsinh;
         return ret;
 }
 
