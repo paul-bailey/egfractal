@@ -111,6 +111,7 @@
  *    other than z^2+c.  This is unfortunate, since you can get some really
  *    gnarly images from other such formulas, like the burning ship algo.
  */
+#include "config.h"
 #include "bbrot2.h"
 #include "fractal_common.h"
 #include <stdlib.h>
@@ -122,10 +123,13 @@
 #include <math.h>
 #include <time.h>
 #include <getopt.h>
-#include <pthread.h>
 #include <errno.h>
 #include <sys/mman.h>
-#define CONFIG_HAVE_PTHREAD 1
+#ifndef EGFRACTAL_MULTITHREADED
+# define EGFRACTAL_MULTITHREADED 0
+#else
+# include <pthread.h>
+#endif
 
 struct params_t {
         int n_red;
@@ -273,13 +277,14 @@ initialize_seeds(unsigned short seeds[6])
         seeds[5] = (unsigned short)c + 1;
 }
 
-#if CONFIG_HAVE_PTHREAD
+#if EGFRACTAL_MULTITHREADED
+
 /* XXX Place up at top of file */
-#include <pthread.h>
 struct thread_helper_t {
         pthread_t *id;
         pthread_attr_t attr;
 };
+
 static void
 init_thread_helper(struct thread_helper_t *helper, int nthread)
 {
@@ -291,6 +296,7 @@ init_thread_helper(struct thread_helper_t *helper, int nthread)
                 exit(EXIT_FAILURE);
         }
 }
+
 static void
 join_threads(struct thread_helper_t *helper,
                 struct thread_info_t *ti, int nthread)
@@ -312,6 +318,7 @@ join_threads(struct thread_helper_t *helper,
         }
 
 }
+
 static void
 create_thread(struct thread_helper_t *helper,
                 struct thread_info_t *ti, int threadno)
@@ -323,20 +330,25 @@ create_thread(struct thread_helper_t *helper,
                 exit(EXIT_FAILURE);
         }
 }
+
 static void
 free_thread_helper(struct thread_helper_t *helper)
 {
         free(helper->id);
 }
-#else /* !CONFIG_HAVE_PTHREAD */
+
+#else /* !EGFRACTAL_MULTITHREADED */
+
 struct thread_helper_t {
         int dummy;
 };
+
 static void
 init_thread_helper(struct thread_helper_t *helper, int nthread)
 {
         return;
 }
+
 static void
 join_threads(struct thread_helper_t *helper,
                 struct thread_info_t *ti, int nthread)
@@ -344,18 +356,21 @@ join_threads(struct thread_helper_t *helper,
         /* Only one thread, so call it directly */
         bbrot_thread(&ti[0]);
 }
+
 static void
 create_thread(struct thread_helper_t *helper,
                 struct thread_info_t *ti, int threadno)
 {
         return;
 }
+
 static void
 free_thread_helper(struct thread_helper_t *helper)
 {
         return;
 }
-#endif /* !CONFIG_HAVE_PTHREAD */
+
+#endif /* !EGFRACTAL_MULTITHREADED */
 
 static void
 bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
@@ -656,7 +671,7 @@ parse_args(int argc, char **argv, struct params_t *params)
                 exit(EXIT_FAILURE);
         }
 
-        if (!CONFIG_HAVE_PTHREAD)
+        if (!EGFRACTAL_MULTITHREADED)
                 params->nthread = 1;
 
         /* One quick sanity check */

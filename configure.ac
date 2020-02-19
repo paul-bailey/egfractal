@@ -22,6 +22,18 @@ AC_CHECK_HEADERS([unistd.h stdio.h stdlib.h string.h stdint.h \
                   ctype.h errno.h assert.h math.h], , \
                   [AC_MSG_ERROR([Could not find a necessary header])])
 
+dnl Checking if you can multi-thread mbrot2 and bbrot2
+have_pthread=yes
+AC_CHECK_LIB(pthread, pthread_create, ,have_pthread=no)
+if test "x${have_pthread}" = "xyes"; then
+  AC_CHECK_HEADER(pthread.h, ,have_pthread=no)
+fi
+if test "x${have_pthread}" = "xyes"; then
+  AC_DEFINE([EGFRACTAL_MULTITHREADED], [1], [Can use multiple threads])
+else
+  AC_MSG_WARN([pthread missing])
+fi
+
 AC_HEADER_STDBOOL
 AC_C_INLINE
 
@@ -46,6 +58,14 @@ ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
 Prefix: '${prefix}'.
 Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
+"
+if test "x${have_pthread}" = "xno"; then
+  echo \
+"System does not support POSIX threads.
+Your programs may run slower than normal."
+fi
+echo \
+"
 
 Now type 'make @<:@<target>@:>@'
     where the optional <target> is:
