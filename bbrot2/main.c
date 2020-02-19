@@ -115,6 +115,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <assert.h>
 #include <math.h>
@@ -247,7 +248,7 @@ shave_outliers(unsigned long *buf, unsigned int npx, double rmout_scale)
         if (stdmax > max)
                 stdmax = max;
 
-        assert(stdmax > stdmin);
+        assert(stdmax >= stdmin);
 
         for (i = 0; i < npx; i++) {
                 if (buf[i] < stdmin) {
@@ -373,18 +374,52 @@ iterate_r(complex_t c, unsigned int chan,
         }
 }
 
+/* NORM3 converts result of rand48_ll to some point in [0:3) */
+#define NORM3  (3.0 / (double)MASK48)
+#define MASK48 (((uint64_t)1 << 48) - 1)
+
+/*
+ * My own inline erand48().
+ *
+ * Besides removing the overhead of a function call for every point,
+ * I also reduce a mfloat_t multiplication, because I can directly
+ * "normalize" to [0:3) instead of multiplying erand48()'s already-
+ * normalized-to-[0:1) result.
+ *
+ * XXX REVISIT: Multiplying a 48-bit value with a 32-bit value will
+ * cause overflow in a 64-bit word.
+ * Will the result of an overflowing multiplication
+ * always be modulo the correct answer, on any architecture?
+ * If yes, then I don't care.
+ * If no, then I need to handle this with 80-bit storage.
+ */
+static inline __attribute__((always_inline)) uint64_t
+rand48_il(uint64_t old)
+{
+        /* Formula given by man (3) erand48 */
+        return (old * 0x5DEECE66Dul + 0xB) & MASK48;
+}
+
 static void *
 bbrot_thread(void *arg)
 {
+        uint64_t s48_x, s48_y;
         struct thread_info_t *ti = (struct thread_info_t *)arg;
         unsigned long i;
+
+        s48_x = (uint64_t)ti->seeds[0] << 32
+                | (uint64_t)ti->seeds[1] << 16 | (uint64_t)ti->seeds[2];
+        s48_y = (uint64_t)ti->seeds[3] << 32
+                | (uint64_t)ti->seeds[4] << 16 | (uint64_t)ti->seeds[5];
 
         for (i = 0; i < ti->points; i++) {
                 complex_t c;
                 int chan;
 
-                c.re = erand48(&ti->seeds[0]) * 3.0 - 2.0;
-                c.im = erand48(&ti->seeds[3]) * 3.0 - 1.5;
+                s48_x = rand48_il(s48_x);
+                s48_y = rand48_il(s48_y);
+                c.re = (double)s48_x * NORM3 - 2.0;
+                c.im = (double)s48_y * NORM3 - 1.5;
                 if (!ti->formula && inside_cardioid_or_bulb(c))
                         continue;
                 for (chan = 0; chan < ti->nchan; chan++) {
@@ -633,7 +668,6 @@ parse_args(int argc, char **argv, struct params_t *params)
                         if (f == NULL)
                                 bad_arg("--formula", optarg);
                         params->formula = f->fn;
-                        /* buddhabrot doesn't need derivative or order. */
                         break;
                     }
                 case 6:
