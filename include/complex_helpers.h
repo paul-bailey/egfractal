@@ -40,7 +40,7 @@
 #include <stdbool.h>
 
 /* TODO: Some CLEAN way of making this a program-by-program option */
-typedef long double mfloat_t;
+typedef double mfloat_t;
 
 typedef struct complex_t {
         mfloat_t re;

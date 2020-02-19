@@ -40,8 +40,8 @@ complex_sin(complex_t c)
         mfloat_t imcosh, imsinh;
 
         /*
-         * ret.re = sinl(c.re) * coshl(c.im);
-         * ret.im = cosl(c.re) * sinhl(c.im);
+         * ret.re = sin(c.re) * cosh(c.im);
+         * ret.im = cos(c.re) * sinh(c.im);
          *
          * We can speed this up ever so slightly, because
          * exp() is faster than sinh(), and we know that
@@ -64,8 +64,8 @@ complex_cos(complex_t c)
         mfloat_t imcosh, imsinh;
 
         /*
-         * ret.re = cosl(c.re) * coshl(c.im);
-         * ret.im = sinl(c.re) * sinhl(c.im);
+         * ret.re = cos(c.re) * cosh(c.im);
+         * ret.im = sin(c.re) * sinh(c.im);
          *
          * We can speed this up ever so slightly, because
          * exp() is faster than sinh(), and we know that
@@ -89,7 +89,7 @@ complex_inverse(complex_t c)
          */
         complex_t ret;
         mfloat_t m = complex_modulus2(c);
-        if (m == 0.0L) {
+        if (m == 0.0) {
                 ret.re = ret.im = INFINITY;
         } else {
                 ret.re = c.re / m;
@@ -104,7 +104,7 @@ complex_div(complex_t num, complex_t den)
 {
         complex_t ret;
         mfloat_t m = complex_modulus2(den);
-        if (m == 0.0L) {
+        if (m == 0.0) {
                 ret.re = ret.im = INFINITY;
         } else {
                 ret.re = num.re * den.re / m;
