@@ -111,6 +111,7 @@
  *    other than z^2+c.  This is unfortunate, since you can get some really
  *    gnarly images from other such formulas, like the burning ship algo.
  */
+#include "bbrot2.h"
 #include "fractal_common.h"
 #include <stdlib.h>
 #include <string.h>
@@ -124,6 +125,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/mman.h>
+#define CONFIG_HAVE_PTHREAD 1
 
 struct params_t {
         int n_red;
@@ -150,22 +152,6 @@ struct params_t {
         complex_t (*formula)(complex_t, complex_t);
 };
 
-struct thread_info_t {
-        int width;
-        int height;
-        int nchan;
-        int min;
-        unsigned long points;
-        int n[3];
-        unsigned long *_chanbuf_base;
-        unsigned long *chanbuf[3];
-        unsigned short seeds[6];
-        complex_t (*formula)(complex_t, complex_t);
-        mfloat_t wthird;
-        mfloat_t hthird;
-        mfloat_t bailsqu;
-};
-
 /* Error helpers */
 static void
 oom(void)
@@ -179,30 +165,6 @@ bad_arg(const char *type, const char *optarg)
 {
         fprintf(stderr, "Bad %s option: `%s'\n", type, optarg);
         exit(EXIT_FAILURE);
-}
-
-static inline void __attribute__((always_inline))
-save_to_hist(struct thread_info_t *ti, int chan, complex_t c)
-{
-        unsigned int col = (int)(ti->wthird * (c.re + 2.0) + 0.5);
-        unsigned int row = (int)(ti->hthird * (c.im + 1.5) + 0.5);
-        if (col < ti->width && row < ti->height)
-                ti->chanbuf[chan][row * ti->width + col]++;
-}
-
-/* Return true if inside cardioid or main bulb */
-static bool
-inside_cardioid_or_bulb(complex_t c)
-{
-        mfloat_t xp = c.re - 0.25L;
-        mfloat_t ysq = c.im * c.im;
-        mfloat_t q = xp * xp + ysq;
-        if ((q * (q + xp)) < (0.25L * ysq))
-                return true;
-        xp = c.re + 1.0;
-        if ((xp * xp + ysq) < (0.25L * ysq))
-                return true;
-        return false;
 }
 
 /*
@@ -311,148 +273,106 @@ initialize_seeds(unsigned short seeds[6])
         seeds[5] = (unsigned short)c + 1;
 }
 
-/*
- * This function runs twice - First just to see if it diverges
- * and again to save the points of the path from @c if it does
- * in fact diverge.
- *
- * Repeating this long iterative process twice sounds like it takes
- * a long time, and it does.  One alternative is to save everything
- * into the histogram @buf and save all the same points in a second
- * buffer, so that we can undo our modification of @buf should the
- * path not diverge.  However, this has experimentally proven to
- * take much longer.  It turns out that the process of saving data
- * into @hist (which includes the slightly mathy save_to_hist() above)
- * is time-consuming, and it's just faster if we don't do that unless
- * we already know the path diverges.
- *
- * TODO: Another option is to have a number of threads that run on
- * different CPUs, each with its own copy of @buf, running this algo
- * on its own subset of the plane (ie. its own series of @c arguments),
- * and when all the threads are complete, sum all the threads' @buf's
- * together.  It may not be useful on a quad-core Hewlett Crappard,
- * but a more powerful computer with lots of cores and lots of RAM
- * would benefit greatly from that.
- */
+#if CONFIG_HAVE_PTHREAD
+/* XXX Place up at top of file */
+#include <pthread.h>
+struct thread_helper_t {
+        pthread_t *id;
+        pthread_attr_t attr;
+};
 static void
-iterate_r(complex_t c, unsigned int chan,
-                struct thread_info_t *ti, bool isdivergent)
+init_thread_helper(struct thread_helper_t *helper, int nthread)
+{
+        helper->id = malloc(sizeof(*helper->id) * nthread);
+        if (!helper->id)
+                oom();
+        if (pthread_attr_init(&helper->attr) != 0) {
+                perror("pthread_attr_init error");
+                exit(EXIT_FAILURE);
+        }
+}
+static void
+join_threads(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int nthread)
 {
         int i;
-        complex_t z = { .re = 0.0L, .im = 0.0L };
-        if (ti->formula) {
-                for (i = 0; i < ti->n[chan]; i++) {
-                        complex_t ztmp = ti->formula(z, c);
-                        if (isdivergent && i > ti->min)
-                                save_to_hist(ti, chan, ztmp);
-
-                        /* Check both bailout and periodicity */
-                        if (ztmp.re == z.re && ztmp.im == z.im)
-                                return;
-                        if (complex_modulus2(ztmp) >= ti->bailsqu) {
-                                if (!isdivergent)
-                                        iterate_r(c, chan, ti, true);
-                                return;
-                        }
-
-                        z = ztmp;
-                }
-        } else {
-                for (i = 0; i < ti->n[chan]; i++) {
-                        /* next z = z^2 + c */
-                        complex_t ztmp = complex_add(complex_sq(z), c);
-                        if (isdivergent && i > ti->min)
-                                save_to_hist(ti, chan, ztmp);
-
-                        /* Check both bailout and periodicity */
-                        if (complex_modulus2(ztmp) >= ti->bailsqu
-                            || (ztmp.re == z.re && ztmp.im == z.im)) {
-                                if (!isdivergent)
-                                        iterate_r(c, chan, ti, true);
-                                return;
-                        }
-
-                        z = ztmp;
+        int res = pthread_attr_destroy(&helper->attr);
+        if (res != 0) {
+                perror("pthread_attr_destroy error");
+                exit(EXIT_FAILURE);
+        }
+        for (i = 0; i < nthread; i++) {
+                void *s;
+                res = pthread_join(helper->id[i], &s);
+                if (res != 0 || s != NULL) {
+                        fprintf(stderr, "pthread_join[%d] failed (%s)\n",
+                                i, strerror(errno));
+                        fprintf(stderr, "Continuing anyway\n");
                 }
         }
+
 }
-
-/* NORM3 converts result of rand48_ll to some point in [0:3) */
-#define NORM3  (3.0 / (double)MASK48)
-#define MASK48 (((uint64_t)1 << 48) - 1)
-
-/*
- * My own inline erand48().
- *
- * Besides removing the overhead of a function call for every point,
- * I also reduce a mfloat_t multiplication, because I can directly
- * "normalize" to [0:3) instead of multiplying erand48()'s already-
- * normalized-to-[0:1) result.
- *
- * XXX REVISIT: Multiplying a 48-bit value with a 32-bit value will
- * cause overflow in a 64-bit word.
- * Will the result of an overflowing multiplication
- * always be modulo the correct answer, on any architecture?
- * If yes, then I don't care.
- * If no, then I need to handle this with 80-bit storage.
- */
-static inline __attribute__((always_inline)) uint64_t
-rand48_il(uint64_t old)
+static void
+create_thread(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int threadno)
 {
-        /* Formula given by man (3) erand48 */
-        return (old * 0x5DEECE66Dul + 0xB) & MASK48;
-}
-
-static void *
-bbrot_thread(void *arg)
-{
-        uint64_t s48_x, s48_y;
-        struct thread_info_t *ti = (struct thread_info_t *)arg;
-        unsigned long i;
-
-        s48_x = (uint64_t)ti->seeds[0] << 32
-                | (uint64_t)ti->seeds[1] << 16 | (uint64_t)ti->seeds[2];
-        s48_y = (uint64_t)ti->seeds[3] << 32
-                | (uint64_t)ti->seeds[4] << 16 | (uint64_t)ti->seeds[5];
-
-        for (i = 0; i < ti->points; i++) {
-                complex_t c;
-                int chan;
-
-                s48_x = rand48_il(s48_x);
-                s48_y = rand48_il(s48_y);
-                c.re = (double)s48_x * NORM3 - 2.0;
-                c.im = (double)s48_y * NORM3 - 1.5;
-                if (!ti->formula && inside_cardioid_or_bulb(c))
-                        continue;
-                for (chan = 0; chan < ti->nchan; chan++) {
-                        iterate_r(c, chan, ti, false);
-                }
+        int res = pthread_create(&helper->id[threadno],
+                        &helper->attr, &bbrot_thread, &ti[threadno]);
+        if (res != 0) {
+                perror("pthread_create error");
+                exit(EXIT_FAILURE);
         }
-        return NULL;
 }
+static void
+free_thread_helper(struct thread_helper_t *helper)
+{
+        free(helper->id);
+}
+#else /* !CONFIG_HAVE_PTHREAD */
+struct thread_helper_t {
+        int dummy;
+};
+static void
+init_thread_helper(struct thread_helper_t *helper, int nthread)
+{
+        return;
+}
+static void
+join_threads(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int nthread)
+{
+        /* Only one thread, so call it directly */
+        bbrot_thread(&ti[0]);
+}
+static void
+create_thread(struct thread_helper_t *helper,
+                struct thread_info_t *ti, int threadno)
+{
+        return;
+}
+static void
+free_thread_helper(struct thread_helper_t *helper)
+{
+        return;
+}
+#endif /* !CONFIG_HAVE_PTHREAD */
 
 static void
 bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                 int nchan, int npx)
 {
         struct thread_info_t *ti;
-        pthread_t *id;
-        pthread_attr_t attr;
+        struct thread_helper_t helper;
         int nthread = params->nthread;
         size_t bufsize = sizeof(unsigned long) * npx * nchan;
-        int i, res;
+        int i;
 
-        id = malloc(sizeof(*id) * nthread);
         ti = malloc(sizeof(*ti) * nthread);
-        if (!ti || !id)
+        if (!ti)
                 oom();
 
-        res = pthread_attr_init(&attr);
-        if (res != 0) {
-                perror("pthread_attr_init error");
-                exit(EXIT_FAILURE);
-        }
+        init_thread_helper(&helper, nthread);
+
         for (i = 0; i < nthread; i++) {
                 unsigned long *chanbase = malloc(bufsize);
                 if (!chanbase)
@@ -482,28 +402,10 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                  */
                 initialize_seeds(ti[i].seeds);
 
-                res = pthread_create(&id[i], &attr,
-                                &bbrot_thread, &ti[i]);
-                if (res != 0) {
-                        perror("pthread_create error");
-                        exit(EXIT_FAILURE);
-                }
+                create_thread(&helper, ti, i);
         }
 
-        res = pthread_attr_destroy(&attr);
-        if (res != 0) {
-                perror("pthread_attr_destroy error");
-                exit(EXIT_FAILURE);
-        }
-        for (i = 0; i < nthread; i++) {
-                void *s;
-                int res = pthread_join(id[i], &s);
-                if (res != 0 || s != NULL) {
-                        fprintf(stderr, "pthread_join[%d] failed (%s)\n",
-                                i, strerror(errno));
-                        fprintf(stderr, "Continuing anyway\n");
-                }
-        }
+        join_threads(&helper, ti, nthread);
 
         /*
          * Sum the threads' results together.
@@ -519,7 +421,7 @@ bbrot2_get_data(struct params_t *params, unsigned long *sumbuf,
                         sumbuf[j] += chanbase[j];
                 free(ti[i]._chanbuf_base);
         }
-        free(id);
+        free_thread_helper(&helper);
         free(ti);
 }
 
@@ -753,6 +655,9 @@ parse_args(int argc, char **argv, struct params_t *params)
                         argv[optind]);
                 exit(EXIT_FAILURE);
         }
+
+        if (!CONFIG_HAVE_PTHREAD)
+                params->nthread = 1;
 
         /* One quick sanity check */
         if (params->min >= params->n_red) {
