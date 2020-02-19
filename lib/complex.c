@@ -74,6 +74,16 @@ complex_cos(complex_t c)
         imcosh = cosh(c.im);
         imsinh = exp(c.im) - imcosh;
 
+        /*
+         * XXX REVISIT: You'd think sincos() is faster,
+         * but it's a pain to set up config.h for this,
+         * and I've tested it to actually make no difference in
+         * execution time anyway.
+         *
+         * It doesn't show up clearly in the disassembly,
+         * but perhaps gcc sees that the args to sin() and cos()
+         * are identical and calls sincos() anyway.
+         */
         ret.re = cos(c.re) * imcosh;
         ret.im = sin(c.re) * imsinh;
         return ret;
@@ -131,7 +141,8 @@ complex_poly(complex_t c, const mfloat_t *coef, int order)
                 /* Don't do a bunch of math that amounts to nothing */
                 if (coef[i] == 0.0)
                         continue;
-                ret = complex_add(ret, complex_mulr(complex_pow(ret, i), coef[i]));
+                ret = complex_add(ret,
+                        complex_mulr(complex_pow(ret, i), coef[i]));
         }
         return ret;
 }
@@ -145,7 +156,8 @@ complex_cpoly(complex_t c, const complex_t *coef, int order)
         for (i = 1; i < order; i++) {
                 if (coef[i].im == 0.0 && coef[i].re == 0.0)
                         continue;
-                ret = complex_add(ret, complex_mul(coef[i], complex_pow(ret, i)));
+                ret = complex_add(ret,
+                        complex_mul(coef[i], complex_pow(ret, i)));
         }
         return ret;
 }

@@ -47,9 +47,29 @@ iterate_r(complex_t c, unsigned int chan,
 {
         int i;
         complex_t z = { .re = 0.0L, .im = 0.0L };
+        /*
+         * It looks like a horrible D.R.Y. violation to have this
+         * "if" statement be outside the "for" loop, since the
+         * only difference is what gets assigned to "ztmp" on the
+         * first line, but the execution time has been tested and
+         * shown to increase by a noticeable amount when this happens.
+         */
         if (ti->formula) {
                 for (i = 0; i < ti->n[chan]; i++) {
+                        /*
+                         * Wow! The overhead of a non-inline function
+                         * call for every iteration!  One which itself
+                         * might call a "complex_helpers.h" function!
+                         * Which may in turn call a <math.h> function!
+                         *
+                         * ...and yet, when I tried aggressively
+                         * inlining every single line of code into this
+                         * function with complete disregard to good C
+                         * programming style, I tested it and found
+                         * absolutely no improvement on speed.
+                         */
                         complex_t ztmp = ti->formula(z, c);
+
                         if (isdivergent && i > ti->min)
                                 save_to_hist(ti, chan, ztmp);
 
