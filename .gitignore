@@ -3,7 +3,7 @@ Makefile
 Makefile
 .deps
 *.m4
-*.h
+./config.h
 stamp-h1
 configure
 config.log
