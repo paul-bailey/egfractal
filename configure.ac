@@ -44,7 +44,6 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  examples/Makefile
                  julia1/Makefile
-                 buddhabrot1/Makefile
                  bbrot2/Makefile
                  mbrot2/Makefile
                  mandelbrot/Makefile])

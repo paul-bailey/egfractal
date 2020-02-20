@@ -1,0 +1,165 @@
+.. -*- rst -*-
+
+============
+How It Works
+============
+
+-------------------
+or, The Nerdy Stuff
+-------------------
+
+:author: Paul Bailey
+:date: February 2020
+:TODO: Finish this file
+
+The Mandelbrot Set
+==================
+
+The iteration-count algorithm
+-----------------------------
+
+The distance-estimate algorithm
+-------------------------------
+
+The Buddhabrot
+==============
+
+The Buddhabrot is a different way of looking at the Mandelbrot set.  It
+could be thought of as a picture of all the infinitessmally thin paths of
+divergence near the Mandelbrot set (though an academic might could take
+issue with my choice of words).  In another sense this could be thought
+of as a map of flux, since some areas are more densely passed through
+than others (as if two different but infinitely close points could be
+closer or further - non-discrete math is weird).  Thus the brightness of
+a part of the image is an area of larger density -- more paths pass
+through those area than pass through the darker parts.
+
+The result is a very nebulous image. It looks like clouds with bursts of
+light trying to break through.  It also bears some shapely resemblance to
+the Mandelbrot set.
+
+bbrot2: The Buddhabrot Algorithm
+--------------------------------
+
+For each random point ``c`` from [-1.5, -2.0] to [1.5, 2.0]:
+If ``c`` is in the Mandelbrot set (determined to be points
+that do not escape before the max number of iterations ``n``),
+then do nothing.  If ``c`` is outside the Mandelbrot set,
+then trace its path from ``f(z=0)`` to ``f(z=bailout)``
+where ``z[i] = z[i-1]^2 + c`` and ``i`` is zero to either
+``n`` or the number of iterations required to reach bailout,
+whichever comes first.  (I use the word "trace" loosely,
+since the path is not necessarily continuous.)
+
+The "trace" is done using a simple histogram: an array of
+counters, one for each pixel.  For every ``z[i]`` before
+``z`` reaches bailout, increment the counter corresponding to
+``z[i]``.  In an analog workd, the brightness of any area
+of the picture represents the density of the "traces" through
+that area, but in the digital world of discrete integer math
+it represents the number of times a "trace" hit that pixel;
+think of it as number of times a "trace" went through a
+*sub*-pixel.  (If the random-number generator (R.N.G.) used
+by Buddhabrot is exclusive enough, then two hits in the same
+pixel do not necessarily mean that the two "traces" are identical
+and will follow the same path all the way through.)
+
+There are three such histograms, one for each RGB channel.
+Their counts will be different from each other for the following
+reasons, due to the ability to select a different number of max
+iterations for each channel.  (This way you can make different
+color variations rather than just a monochrome Buddhabrot.)
+
+Buddhabrot Optimizations
+------------------------
+
+To get a good-looking Buddhabrot on a large image, you
+need lots of iterations -- enough to clearly define each
+pixel.  If you follow my `advice <How many iterations do
+I need?>`, then a 3000x3000 could go through more than a
+trillion iterations of the ``z^2+c`` formula!
+
+The fastest optimization is to split up the workload
+between separate CPUs.  Each thread is tasked with
+calculating in its own buffer the ``-p`` amount of
+RNG-selected points divided by the number of threads.
+When all the threads have finished, their buffers are
+then summed up into a single buffer that will be used
+for rendering.
+
+Another big time-waster is that every point of
+``c`` that falls within the Mandelbrot set will have
+every one of its ``z[0...n]`` values disregarded.
+Worse, these are the longest points to iterate through,
+since we determine it to have fallen within the set
+only by reaching its max number of iterations; divergent
+points - the ones we care about - are actually quicker,
+because they hit the bailout radius before the number
+of iterations reaches ``n``.
+
+So the second fastest optimization is to skip the
+vast mast majority of ``c`` points that would fall
+within the Mandelbrot set, without iterating through them.
+We can do this because we know the formula for the
+main cardioid and the largest bulb - together they
+account for a majority of the area of the Mandelbrot set.
+So we calculate that before anything else.  If it falls
+within the cardioid or main bulb, we skip it.  If not,
+then we iterate through ``z[0...n]`` to find out whether
+it diverges or not.
+
+Wanted Optimizations
+--------------------
+
+* I don't know anything like the Cardioid cheat for
+  the other formulas besides ``z^2+c``.  This is unfortunate,
+  since you can get some really gnarly images from other such
+  formulats, like the burning ship algorithm and (my favorite)
+  ``z[i] = cos(z[i-1]) + c``.
+
+* I don't know any good way to zoom in on the Buddhabrot
+  besides just making a really high-reseolution version
+  of the full thing.  This is because a point could be hit
+  by a "trace" that began nowhere near it.
+
+
+How many iterations do I need?
+------------------------------
+
+:TODO: move this section to man page
+
+Naively you may think that this is 256 to the power
+of three times the number of pixels, but don't forget that
+not every pixel will be full-white.  Also, you will have
+some small, disproportionately bright areas -- think like
+the super-bright center of Andromeda.
+
+On the other hand, many points will be discarded.  If ``c``
+is found to be inside the Mandelbrot set, then every point
+of ``z`` will be ignored.  And even if it isn't, some points
+of ``z`` will be ignored just because they pass outside of
+the image but not the bailout radius.
+
+Experimentally, I find that the best value of -p, -r, -g, and -b
+are such that -r plus -g plus -b equal somewhere around five
+or six thousand, and -p is the number of pixels times about 100.
+If you use the -s option, multiply the -p option by three rather
+than increase the number of iterations.
+
+
+Other Formulas
+==============
+
+In addition to ``z[i] = z[i-1]^2 + c``, there are other
+formulas to try with the Buddhabrot and the Mandelbrot set,
+such as the "burning-ship" algorithm: ``z[i] = |z[i-1]| + c``,
+or polynomials or other powers of ``z``, or even sine and
+cosine. (I don't know if any of these other formulas are proven
+or not to be technically fractals.  For purposes of rendering
+interesting images it doesn't really matter.)
+
+One caveat is that for the Mandelbrot set's distance estimate
+used by ``mbrot2``, not all of these formulas work, because
+(for example) the burning ship algorithm has discontinuity,
+which means it is not differentiable at every point.  The result
+is a glitchy-looking picture.
