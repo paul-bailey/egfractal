@@ -21,21 +21,21 @@ lib/*.o
 lib/*.a
 lib/Makefile
 lib/.deps
-mandelbrot/*.in
-mandelbrot/*.o
-mandelbrot/Makefile
-mandelbrot/.deps
-mandelbrot/mandelbrot
+mbrot2/*.in
+mbrot2/*.o
+mbrot2/Makefile
+mbrot2/.deps
+mbrot2/mbrot2
 julia1/*.in
 julia1/*.o
 julia1/Makefile
 julia1/.deps
 julia1/julia1
-buddhabrot1/*.in
-buddhabrot1/*.o
-buddhabrot1/Makefile
-buddhabrot1/.deps
-buddhabrot1/buddhabrot1
+bbrot2/*.in
+bbrot2/*.o
+bbrot2/Makefile
+bbrot2/.deps
+bbrot2/bbrot2
 examples/*.in
 examples/*.o
 examples/Makefile
@@ -50,7 +50,7 @@ examples/sierpinski
 */*.jpg
 # Cannot wildcard png, because
 # I have versioned png/*.png
-mandelbrot/*.png
+mbrot2/*.png
 examples/*.png
 julia1/*.png
-buddhabrot1/*.png
+bbrot2/*.png
