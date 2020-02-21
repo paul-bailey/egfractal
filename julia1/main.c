@@ -30,6 +30,7 @@
  */
 #include "julia1_common.h"
 #include "fractal_common.h"
+#include "pxbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -60,6 +61,7 @@ struct gbl_t gbl = {
         .equalize = false,
         .color_distance = false,
         .verbose = false,
+        .linked = false,
 };
 
 /* Error helpers */
@@ -229,9 +231,13 @@ julia(Pxbuf *pxbuf)
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
                         unsigned int color;
+                        struct pixel_t px;
                         mfloat_t i = *ptbuf++;
                         color = get_color(i, max);
-                        pxbuf_fill_pixel(pxbuf, row, col, color);
+                        px.x[0] = (float)(color & 0xffu);
+                        px.x[1] = (float)((color >> 8) & 0xffu);
+                        px.x[2] = (float)((color >> 16) & 0xffu);
+                        pxbuf_set_pixel(pxbuf, &px, row, col);
                 }
         }
         free(tbuf);
@@ -249,7 +255,7 @@ main(int argc, char **argv)
 
         outfile = parse_args(argc, argv);
 
-        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_BLACK);
+        pxbuf = pxbuf_create(gbl.width, gbl.height);
         if (!pxbuf) {
                 fprintf(stderr, "OOM!\n");
                 return 1;
@@ -262,12 +268,17 @@ main(int argc, char **argv)
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
+        /* TODO: Add --rmout option */
+        if (gbl.equalize) {
+                pxbuf_normalize(pxbuf, PXBUF_NORM_EQ,
+                                gbl.eq_option, gbl.linked);
+        } else {
+                pxbuf_normalize(pxbuf, PXBUF_NORM_SCALE, 1.0, gbl.linked);
+        }
         if (gbl.negate)
                 pxbuf_negate(pxbuf);
-        if (gbl.equalize)
-                pxbuf_eq(pxbuf, gbl.eq_option, true);
-        pxbuf_print(pxbuf, fp);
+        pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_CLIP);
         fclose(fp);
-        pxbuf_free(pxbuf);
+        pxbuf_destroy(pxbuf);
         return 0;
 }

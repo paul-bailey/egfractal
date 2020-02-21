@@ -30,6 +30,7 @@
  */
 #include "mandelbrot_common.h"
 #include "fractal_common.h"
+#include "pxbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -56,8 +57,10 @@ struct gbl_t gbl = {
         .distance_est   = false,
         .verbose        = false,
         .color_distance = false,
+        .fit            = false,
         .distance_root  = 0.25,
         .negate         = false,
+        .linked         = false,
         .formula        = NULL,
         .log_d          = 0.0,
         .rmout          = false,
@@ -71,6 +74,7 @@ oom(void)
         exit(EXIT_FAILURE);
 }
 
+#if 0
 static mfloat_t
 mbrot_eq(mfloat_t *buf, size_t size, mfloat_t *pmin, mfloat_t max)
 {
@@ -171,6 +175,7 @@ shave_outliers(mfloat_t *buf)
                         buf[i] = stdmax;
         }
 }
+#endif  /* 0 */
 
 #if EGFRACTAL_MULTITHREADED
 
@@ -338,9 +343,9 @@ mbrot_get_data(mfloat_t *tbuf, mfloat_t *min, mfloat_t *max, int nthread)
 
         /* Combine the threads' interleaved buffers */
         if (min)
-                *min = 1.0e16;
+                *min = INFINITY;
         if (max)
-                *max = 0.0;
+                *max = -INFINITY;
         for (i = 0; i < nthread; i++) {
                 int row, col;
                 mfloat_t *src = ti[i].buf;
@@ -373,8 +378,11 @@ mandelbrot(Pxbuf *pxbuf)
         mbrot_get_data(tbuf, &min, &max, gbl.nthread);
 
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
+#if 0
         if (gbl.rmout)
                 shave_outliers(tbuf);
+#endif
+#if 0
         if (gbl.have_equalize) {
                 max = mbrot_eq(tbuf, gbl.height * gbl.width, &min, max);
                 max -= min;
@@ -382,12 +390,19 @@ mandelbrot(Pxbuf *pxbuf)
                 printf("min: %Lg max: %Lg (after EQ)\n",
                        (long double)min, (long double)max);
         }
+#endif
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
+                        /*
+                         * FIXME: need to completely re-design
+                         * palette.c to use arrays of struct pixel_t,
+                         * for precision's sake.
+                         */
                         mfloat_t v = *ptbuf++;
-                        unsigned int color = get_color(v, min, max);
-                        pxbuf_fill_pixel(pxbuf, row, col, color);
+                        struct pixel_t px;
+                        get_color(v, min, max, &px);
+                        pxbuf_set_pixel(pxbuf, &px, row, col);
                 }
         }
         free(tbuf);
@@ -402,13 +417,14 @@ main(int argc, char **argv)
         };
         Pxbuf *pxbuf;
         FILE *fp;
+        int method;
 
         /* need to set these "consts" first */
         gbl.log_d = logl(2.0L);
 
         parse_args(argc, argv, &optflags);
 
-        pxbuf = pxbuf_create(gbl.width, gbl.height, COLOR_WHITE);
+        pxbuf = pxbuf_create(gbl.width, gbl.height);
         if (!pxbuf)
                 oom();
 
@@ -426,13 +442,32 @@ main(int argc, char **argv)
                 return 1;
         }
 
-        if (optflags.print_palette)
+        if (optflags.print_palette) {
                 print_palette_to_bmp(pxbuf);
-        if (gbl.negate)
                 pxbuf_negate(pxbuf);
-        pxbuf_print(pxbuf, fp);
+        } else {
+
+                if (gbl.rmout) {
+                        method = PXBUF_NORM_CROP;
+                } else if (gbl.have_equalize) {
+                        method = PXBUF_NORM_EQ;
+                } else if (gbl.distance_est) {
+                        method = PXBUF_NORM_SCALE;
+                } else {
+                        method = PXBUF_NORM_CLIP;
+                }
+                pxbuf_normalize(pxbuf, method,
+                                gbl.rmout_scale, gbl.linked);
+
+                if (gbl.fit)
+                        pxbuf_normalize(pxbuf, PXBUF_NORM_FIT, 0., gbl.linked);
+                if (gbl.negate)
+                        pxbuf_negate(pxbuf);
+        }
+
+        pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_CLIP);
         fclose(fp);
-        pxbuf_free(pxbuf);
+        pxbuf_destroy(pxbuf);
         return 0;
 }
 

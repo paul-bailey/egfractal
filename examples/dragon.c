@@ -31,6 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "fractal_common.h"
+#include "pxbuf.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

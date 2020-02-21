@@ -112,6 +112,7 @@
  *    gnarly images from other such formulas, like the burning ship algo.
  */
 #include "config.h"
+#include "pxbuf.h"
 #include "bbrot2.h"
 #include "fractal_common.h"
 #include <stdlib.h>
@@ -153,6 +154,7 @@ struct params_t {
         bool use_line_x;
         bool negate;
         bool rmout;
+        bool linked;
         complex_t (*formula)(complex_t, complex_t);
 };
 
@@ -169,86 +171,6 @@ bad_arg(const char *type, const char *optarg)
 {
         fprintf(stderr, "Bad %s option: `%s'\n", type, optarg);
         exit(EXIT_FAILURE);
-}
-
-/*
- * This matters most when running histogram equalization
- *
- * FIXME: Outliers may be different for different channels!
- * This needs to account for that, because as-is, it's rebalancing
- * the red, green, and blue levels.
- */
-static void
-shave_outliers(unsigned long *buf, unsigned int npx, double rmout_scale)
-{
-        double mean;
-        double sumsq;
-        double stddev;
-        unsigned long sum, stdmin, stdmax, max;
-        int i;
-        for (max = 0, sum = 0, i = 0; i < npx; i++) {
-                sum += buf[i];
-                if (max < buf[i])
-                        max = buf[i];
-        }
-        mean = (double)sum / (double)npx;
-        for (sumsq = 0.0, i = 0; i < npx; i++) {
-                double diff = (double)buf[i] - mean;
-                sumsq += diff * diff;
-        }
-        /* "n" instead of "n-1", because we have the whole population */
-        stddev = sqrt(sumsq / (double)npx);
-
-        /* define "outlier as 3 time the standard deviation */
-        stdmin = (unsigned long)(mean - rmout_scale * stddev);
-        stdmax = (unsigned long)(mean + rmout_scale * stddev);
-
-        /*
-         * We might not be following normal distribution,
-         * so make sure we don't go below zero.
-         */
-        if ((long)stdmin < 0) {
-                /*
-                 * XXX REVISIT: Should stdmax be brought in
-                 * by the same amount?
-                 */
-                stdmin = 0;
-        }
-        if (stdmax > max)
-                stdmax = max;
-
-        assert(stdmax >= stdmin);
-
-        for (i = 0; i < npx; i++) {
-                if (buf[i] < stdmin) {
-                        buf[i] = stdmin;
-                } else if (buf[i] > stdmax) {
-                        buf[i] = stdmax;
-                }
-        }
-}
-
-static void
-normalize(struct params_t *params, unsigned long *buf,
-          unsigned int npx, unsigned long new_max)
-{
-        int i;
-        unsigned int max;
-
-        if (params->rmout)
-                shave_outliers(buf, npx, params->rmout_scale);
-        for (max = 0L, i = 0; i < npx; i++) {
-                if (max < buf[i])
-                        max = buf[i];
-        }
-        if (max == 0)
-                return;
-        for (i = 0; i < npx; i++) {
-                /* XXX arbitrary division */
-                buf[i] = buf[i] * (new_max+1) / max;
-                if (buf[i] > new_max)
-                        buf[i] = new_max;
-        }
 }
 
 static void
@@ -346,6 +268,8 @@ struct thread_helper_t {
 static void
 init_thread_helper(struct thread_helper_t *helper, int nthread)
 {
+#warning Remove
+printf("Not multithreaded\n");
         return;
 }
 
@@ -461,9 +385,6 @@ bbrot2(Pxbuf *pxbuf, struct params_t *params)
         bbrot2_get_data(params, sumbuf, nchan, npx);
 
         for (i = 0; i < nchan; i++)
-                normalize(params, &sumbuf[npx * i], npx, 255);
-
-        for (i = 0; i < nchan; i++)
                 chanbuf[i] = &sumbuf[npx * i];
 
         /* Fill each pixel in pixelbuf */
@@ -471,6 +392,7 @@ bbrot2(Pxbuf *pxbuf, struct params_t *params)
         for (row = 0; row < params->height; row++) {
                 for (col = 0; col < params->width; col++) {
                         unsigned int r, g, b;
+                        struct pixel_t px;
                         r = chanbuf[0][i];
                         if (nchan > 1) {
                                 g = chanbuf[1][i];
@@ -480,31 +402,14 @@ bbrot2(Pxbuf *pxbuf, struct params_t *params)
                         }
                         i++;
 
-                        /*
-                         * Some minor peaking (==256) could occur,
-                         * but there should be no overshoot
-                         */
-                        assert(r <= 256 && g <= 256 && b <= 256);
-                        if (r > 255)
-                                r = 255;
-                        if (g > 255)
-                                g = 255;
-                        if (b > 255)
-                                b = 255;
-                        pxbuf_fill_pixel(pxbuf, row, col, TO_RGB(r, g, b));
+                        px.x[PXBUF_RED]        = (float)r;
+                        px.x[PXBUF_GREEN]      = (float)g;
+                        px.x[PXBUF_BLUE]       = (float)b;
+
+                        pxbuf_set_pixel(pxbuf, &px, row, col);
                 }
 
         }
-
-        /*
-         * XXX REVISIT: equalization looks terribly grainy if done
-         * after `normalizing' the array to [0:255].  Find a better
-         * equalization routine while the array is still [0:#hits].
-         */
-        if (params->do_hist)
-                pxbuf_eq(pxbuf, params->eq_exp, true);
-        if (params->negate)
-                pxbuf_negate(pxbuf);
 
         free(sumbuf);
 }
@@ -521,6 +426,7 @@ parse_args(int argc, char **argv, struct params_t *params)
                 { "formula",        required_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
                 { "nthread",        required_argument, NULL, 7 },
+                { "linked",         no_argument,       NULL, 'l' },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "help",           no_argument,       NULL, '?' },
@@ -536,6 +442,7 @@ parse_args(int argc, char **argv, struct params_t *params)
         params->height     = 600;
         params->width      = 600;
         params->min        = 3;
+        params->linked     = false;
         params->nthread    = 4;
         params->bailsqu    = 4.0;
         params->bailout    = 2.0;
@@ -635,6 +542,9 @@ parse_args(int argc, char **argv, struct params_t *params)
                         if (endptr == optarg)
                                 bad_arg("-h (pixel height)", optarg);
                         break;
+                case 'l':
+                        params->linked = true;
+                        break;
                 case 'm':
                         params->min = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
@@ -701,8 +611,10 @@ main(int argc, char **argv)
 {
         struct params_t params;
         FILE *fp;
+        enum pxbuf_norm_t method;
         const char *outfile = parse_args(argc, argv, &params);
-        Pxbuf *pxbuf = pxbuf_create(params.width, params.height, COLOR_WHITE);
+
+        Pxbuf *pxbuf = pxbuf_create(params.width, params.height);
         if (!pxbuf)
                 oom();
 
@@ -713,10 +625,25 @@ main(int argc, char **argv)
                 fprintf(stderr, "Cannot open output file\n");
                 return 1;
         }
+
+        if (params.rmout) {
+                method = PXBUF_NORM_CROP;
+        } else if (params.do_hist) {
+                method = PXBUF_NORM_EQ;
+        } else {
+                method = PXBUF_NORM_SCALE;
+        }
+
+        pxbuf_normalize(pxbuf, method,
+                         params.rmout_scale, params.linked);
+
+        if (params.negate)
+                pxbuf_negate(pxbuf);
+
         pxbuf_rotate(pxbuf);
-        pxbuf_print(pxbuf, fp);
+        pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_CLIP);
         fclose(fp);
 
-        pxbuf_free(pxbuf);
+        pxbuf_destroy(pxbuf);
         return 0;
 }

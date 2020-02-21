@@ -22,6 +22,7 @@ parse_args(int argc, char **argv)
                 { "equalize",       optional_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
                 { "formula",        required_argument, NULL, 5 },
+                { "linked",         no_argument,       NULL, 'l' },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { NULL,             0,                 NULL, 0 },
         };
@@ -30,7 +31,8 @@ parse_args(int argc, char **argv)
         const char *outfile = "julia1.bmp";
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, optstr, long_options, &option_index)) != -1) {
+        while ((opt = getopt_long(argc, argv, optstr,
+                                long_options, &option_index)) != -1) {
                 switch (opt) {
                 case 2:
                         gbl.negate = true;
@@ -103,6 +105,9 @@ parse_args(int argc, char **argv)
                         gbl.height = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
                                 bad_arg("-h", optarg);
+                        break;
+                case 'l':
+                        gbl.linked = true;
                         break;
                 case 'n':
                         gbl.n_iteration = strtoul(optarg, &endptr, 0);

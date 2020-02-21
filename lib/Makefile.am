@@ -1,6 +1,5 @@
 noinst_LIBRARIES = libfractal.a
 libfractal_a_SOURCES = \
- bmp_print.c \
  pxbuf.c \
  complex.c \
  formulas.c \

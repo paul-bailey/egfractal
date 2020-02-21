@@ -53,6 +53,8 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 { "equalize",       optional_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
                 { "nthread",        required_argument, NULL, 7 },
+                { "fit",            no_argument,       NULL, 'f' },
+                { "linked",         no_argument,       NULL, 'l' },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "smooth-option",  required_argument, NULL, 'd' },
@@ -62,7 +64,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 { "help",           no_argument,       NULL, '?' },
                 { NULL,             0,                 NULL, 0 },
         };
-        static const char *optstr = "Db:d:h:n:o:p:vw:x:y:z:?";
+        static const char *optstr = "Db:d:h:lfn:o:p:vw:x:y:z:?";
 
         for (;;) {
                 char *endptr;
@@ -143,6 +145,12 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         gbl.height = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
                                 bad_arg("-h (pixel-height", optarg);
+                        break;
+                case 'f':
+                        gbl.fit = true;
+                        break;
+                case 'l':
+                        gbl.linked = true;
                         break;
                 case 'n':
                         gbl.n_iteration = strtoul(optarg, &endptr, 0);

@@ -1,6 +1,7 @@
 #ifndef BBROT2_H
 #define BBROT2_H
 
+#include "config.h"
 #include "complex_helpers.h"
 
 struct thread_info_t {

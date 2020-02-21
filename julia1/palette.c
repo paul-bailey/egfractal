@@ -29,12 +29,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "julia1_common.h"
+#include "pxbuf.h"
 #include <assert.h>
 #include <string.h>
 
 enum {
         NCOLOR = 128,
 };
+
+enum {
+        /* common color enumerations */
+        COLOR_RED       = 0xff0000u,
+        COLOR_GREEN     = 0x00ff00u,
+        COLOR_BLUE      = 0x0000ffu,
+        COLOR_CYAN      = 0x00ffffu,
+        COLOR_MAGENTA   = 0xff00ffu,
+        COLOR_YELLOW    = 0xffff00u,
+        COLOR_WHITE     = 0xffffffu,
+        COLOR_BLACK     = 0,
+
+        /* Non-standard colors I rather like */
+        COLOR_AMBER     = 0xe7b210u,
+};
+#define TO_RGB(r_, g_, b_)  (((r_) << 16) | ((g_) << 8) | (b_))
 
 static unsigned int pallette[NCOLOR];
 #define NO_COLOR ((unsigned int)~0ul)

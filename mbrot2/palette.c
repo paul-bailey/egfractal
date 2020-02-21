@@ -30,6 +30,7 @@
  */
 #include "mandelbrot_common.h"
 #include "fractal_common.h"
+#include "pxbuf.h"
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -178,7 +179,9 @@ static const unsigned int palette_buffers[][NCOLOR] = { {
         }
 };
 
-static const unsigned int INSIDE_COLORS[] = {
+#define COLOR_BLACK { .x = { 0., 0., 0. } }
+#define COLOR_WHITE { .x = { 255., 255., 255. } }
+static const struct pixel_t INSIDE_COLORS[] = {
         COLOR_BLACK,
         COLOR_WHITE,
         COLOR_BLACK,
@@ -190,43 +193,37 @@ static const unsigned int INSIDE_COLORS[] = {
 };
 
 static const unsigned int *palette;
-#define NO_COLOR ((unsigned int)~0ul)
-static unsigned int inside_color = NO_COLOR;
+static struct pixel_t inside_color__;
+static struct pixel_t *inside_color = NULL;
 
-static unsigned int
-interp_helper(unsigned int color1, unsigned int color2, mfloat_t frac)
+static float crop_255f(float v)
+        { return v < 0.0 ? 0.0 : (v > 255.0 ? 255.0 : v); }
+
+static float
+interp_helper(float color1, float color2, mfloat_t frac)
 {
-        int ret;
-        ret = color1 + (int)(frac * ((mfloat_t)color2 - (mfloat_t)color1) + 0.5);
-        /* Could be an overflow of 1, but should not be overflow of 2 or greater. */
-        assert(ret <= 256 && ret >= -1);
-        if (ret > 255)
-                ret = 255;
-        if (ret < 0)
-                ret = 0;
-        return ret;
+        return crop_255f(color1 + frac * (color2 - color1));
 }
 
 static void
-channelize(unsigned int color, unsigned int *r, unsigned int *g, unsigned int *b)
+channelize(unsigned int color, struct pixel_t *px)
 {
-        *r = (color >> 16) & 0xffu;
-        *g = (color >> 8) & 0xffu;
-        *b = color & 0xffu;
+        px->x[0] = (float)(color & 0xffu);
+        px->x[1] = (float)((color >> 8) & 0xffu);
+        px->x[2] = (float)((color >> 16) & 0xffu);
 }
 
-static unsigned int
-linear_interp(unsigned int color1, unsigned int color2, mfloat_t frac)
+static void
+linear_interp(unsigned int color1, unsigned int color2,
+                mfloat_t frac, struct pixel_t *px)
 {
-        unsigned int r1, g1, b1;
-        unsigned int r2, g2, b2;
-        channelize(color1, &r1, &g1, &b1);
-        channelize(color2, &r2, &g2, &b2);
+        struct pixel_t px1, px2;
+        channelize(color1, &px1);
+        channelize(color2, &px2);
         assert(frac >= 0.0L && frac < 1.0L);
-        r1 = interp_helper(r1, r2, frac);
-        g1 = interp_helper(g1, g2, frac);
-        b1 = interp_helper(b1, b2, frac);
-        return TO_RGB(r1, g1, b1);
+        px->x[0] = interp_helper(px1.x[0], px2.x[0], frac);
+        px->x[1] = interp_helper(px1.x[1], px2.x[1], frac);
+        px->x[2] = interp_helper(px1.x[2], px2.x[2], frac);
 }
 
 #ifndef ARRAYLEN
@@ -248,7 +245,8 @@ initialize_palette(void)
                 p = 0;
         }
 
-        inside_color = INSIDE_COLORS[p];
+        inside_color = &inside_color__;
+        memcpy(inside_color, &INSIDE_COLORS[p], sizeof(*inside_color));
         palette = palette_buffers[p];
 }
 
@@ -256,42 +254,54 @@ initialize_palette(void)
  * Return black-and-white gradient.
  * Works best when bailout radius and number of iterations are high.
  */
-static unsigned int
-distance_to_color_bw(mfloat_t dist, mfloat_t min, mfloat_t max)
+static void
+distance_to_color_bw(mfloat_t dist, mfloat_t min,
+                        mfloat_t max, struct pixel_t *px)
 {
         unsigned int magn;
 
-        if (dist <= 0.0L)
-                return COLOR_BLACK;
+        if (inside_color == NULL)
+                initialize_palette();
 
-        /* TODO: Make the root be a command-line option */
-        magn = (unsigned int)(255.0 * pow((dist-min) / (max-min), gbl.distance_root));
-        if (magn > 255)
-                magn = 255;
+        if (dist <= 0.0L) {
+#warning "Pick one"
+                if (0)
+                        memcpy(px, inside_color, sizeof(*px));
+                else /* Return black */
+                        memset(px, 0, sizeof(*px));
+                return;
+        }
 
-        return TO_RGB(magn, magn, magn);
+        assert(dist <= max && dist >= min && max >= min);
+        magn = (256.0 * pow((dist-min) / (max-min), gbl.distance_root));
+        px->x[0] = magn;
+        px->x[1] = magn;
+        px->x[2] = magn;
 }
 
 /* XXX: D.R.Y. violations with iteration_to_color() */
-static unsigned int
-distance_to_color_palette(mfloat_t dist, mfloat_t min, mfloat_t max)
+static void
+distance_to_color_palette(mfloat_t dist, mfloat_t min,
+                        mfloat_t max, struct pixel_t *px)
 {
         mfloat_t d;
         unsigned int i, v1, v2;
         long double dummy = 0;
 
-        if (inside_color == NO_COLOR)
+        if (inside_color == NULL)
                 initialize_palette();
 
-        if (dist < 0.0L)
-                return inside_color;
+        if (dist < 0.0L) {
+                memcpy(px, inside_color, sizeof(*px));
+                return;
+        }
 
         assert(dist <= max);
         assert(max > min);
         assert(dist >= min);
 
-        /* TODO: Use gbl.distance_root here too? */
-        d = powl((dist-min) / (max-min), gbl.distance_root) * (mfloat_t)NCOLOR;
+        d = powl((dist-min) / (max-min), gbl.distance_root)
+                * (mfloat_t)NCOLOR;
         assert(isfinite(d));
         assert(d >= 0.0L);
         i = (int)d;
@@ -299,50 +309,53 @@ distance_to_color_palette(mfloat_t dist, mfloat_t min, mfloat_t max)
                 i = NCOLOR-1;
         v1 = palette[i];
         v2 = palette[i == NCOLOR - 1 ? 0 : i + 1];
-        return linear_interp(v1, v2, modfl(d, &dummy));
+        linear_interp(v1, v2, modfl(d, &dummy), px);
 
 }
 
-static unsigned int
-distance_to_color(mfloat_t dist, mfloat_t min, mfloat_t max)
+static void
+distance_to_color(mfloat_t dist, mfloat_t min,
+                        mfloat_t max, struct pixel_t *px)
 {
         if (gbl.color_distance)
-                return distance_to_color_palette(dist, min, max);
+                distance_to_color_palette(dist, min, max, px);
         else
-                return distance_to_color_bw(dist, min, max);
+                distance_to_color_bw(dist, min, max, px);
 }
 
 /*
  * Return color of palette[count modulo NCOLOR].
  * Works best when number of iterations is at least NCOLOR.
  */
-static unsigned int
-iteration_to_color(mfloat_t iter_count)
+static void
+iteration_to_color(mfloat_t iter_count, struct pixel_t *px)
 {
         int i;
         unsigned int v1, v2;
         long double dummy = 0;
 
-        if (inside_color == NO_COLOR)
+        if (inside_color == NULL)
                 initialize_palette();
 
-        if (iter_count <= 0.0L || (int)iter_count >= gbl.n_iteration)
-                return inside_color;
+        if (iter_count <= 0.0L || (int)iter_count >= gbl.n_iteration) {
+                memcpy(px, inside_color, sizeof(*px));
+                return;
+        }
 
         /* Linear interpolation of palette[esc_count % NCOLOR] */
         i = (int)iter_count % NCOLOR;
         v1 = palette[i];
         v2 = palette[i == NCOLOR - 1 ? 0 : i + 1];
-        return linear_interp(v1, v2, modfl(iter_count, &dummy));
+        linear_interp(v1, v2, modfl(iter_count, &dummy), px);
 }
 
-unsigned int
-get_color(mfloat_t esc_val, mfloat_t min, mfloat_t max)
+void
+get_color(mfloat_t esc_val, mfloat_t min, mfloat_t max, struct pixel_t *px)
 {
         if (gbl.distance_est) {
-                return distance_to_color(esc_val, min, max);
+                return distance_to_color(esc_val, min, max, px);
         } else {
-                return iteration_to_color(esc_val);
+                return iteration_to_color(esc_val, px);
         }
 }
 
@@ -351,20 +364,21 @@ void
 print_palette_to_bmp(Pxbuf *pxbuf)
 {
         int row, col;
-        if (inside_color == NO_COLOR)
+        double winv = (double)NCOLOR / (double)gbl.width;
+        if (inside_color == NULL)
                 initialize_palette();
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
-                        double idx = (double)col * (double)NCOLOR / (double)gbl.width;
-                        unsigned int i, v1, v2, color;
+                        double idx = (double)col * winv;
+                        unsigned int i, v1, v2;
+                        struct pixel_t px;
                         i = (unsigned int)idx;
                         assert(i < NCOLOR);
                         v1 = palette[i];
                         v2 = palette[i == NCOLOR-1 ? 0 : i + 1];
-                        color = linear_interp(v1, v2, modf(idx, &idx));
-                        pxbuf_fill_pixel(pxbuf, row, col, color);
+                        linear_interp(v1, v2, modf(idx, &idx), &px);
+                        pxbuf_set_pixel(pxbuf, &px, row, col);
                 }
         }
 }
-
 

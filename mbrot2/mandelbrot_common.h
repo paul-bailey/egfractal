@@ -33,10 +33,29 @@
 
 #include "config.h"
 #include "fractal_common.h"
+#include "pxbuf.h"
 
 #ifndef EGFRACTAL_MULTITHREADED
 # define EGFRACTAL_MULTITHREADED 0
 #endif
+
+#if 0
+enum {
+        /* common color enumerations */
+        COLOR_RED       = 0xff0000u,
+        COLOR_GREEN     = 0x00ff00u,
+        COLOR_BLUE      = 0x0000ffu,
+        COLOR_CYAN      = 0x00ffffu,
+        COLOR_MAGENTA   = 0xff00ffu,
+        COLOR_YELLOW    = 0xffff00u,
+        COLOR_WHITE     = 0xffffffu,
+        COLOR_BLACK     = 0,
+
+        /* Non-standard colors I rather like */
+        COLOR_AMBER     = 0xe7b210u,
+};
+#endif
+#define TO_RGB(r_, g_, b_)  (((r_) << 16) | ((g_) << 8) | (b_))
 
 /* main.c */
 extern struct gbl_t {
@@ -56,17 +75,19 @@ extern struct gbl_t {
         mfloat_t equalize_root;
         mfloat_t rmout_scale;
         unsigned int min_iteration;
+        bool fit;
         bool distance_est;
         bool verbose;
         bool negate;
         bool color_distance;
         bool have_equalize;
         bool rmout;
+        bool linked;
         complex_t (*formula)(complex_t, complex_t);
         complex_t (*dformula)(complex_t, complex_t);
 } gbl;
 
-#define OLD_XY_TO_COMPLEX 0
+#define OLD_XY_TO_COMPLEX 1
 struct thread_info_t {
         mfloat_t min;
         mfloat_t max;
@@ -99,7 +120,8 @@ struct thread_info_t {
 };
 
 /* palette.c */
-extern unsigned int get_color(mfloat_t idx, mfloat_t min, mfloat_t max);
+extern void get_color(mfloat_t idx, mfloat_t min,
+                        mfloat_t max, struct pixel_t *px);
 extern void print_palette_to_bmp(Pxbuf *pxbuf);
 
 /* parse_args.c */
