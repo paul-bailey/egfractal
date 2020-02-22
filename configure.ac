@@ -1,9 +1,9 @@
 AC_PREREQ([2.68])
-AC_INIT([roscid-fractal], [1.0], [roscidcup@falstaffandme.com])
+AC_INIT([egfractal], [1.0], [roscidcup@falstaffandme.com])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/m4])
-AC_CONFIG_SRCDIR([mandelbrot/palette.c])
+AC_CONFIG_SRCDIR([mbrot2/palette.c])
 AC_CONFIG_HEADERS([config.h])
 
 LT_PREREQ([2.2])
@@ -45,8 +45,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Makefile
                  julia1/Makefile
                  bbrot2/Makefile
-                 mbrot2/Makefile
-                 mandelbrot/Makefile])
+                 mbrot2/Makefile])
 
 AC_OUTPUT
 
