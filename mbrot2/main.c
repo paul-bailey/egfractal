@@ -74,109 +74,6 @@ oom(void)
         exit(EXIT_FAILURE);
 }
 
-#if 0
-static mfloat_t
-mbrot_eq(mfloat_t *buf, size_t size, mfloat_t *pmin, mfloat_t max)
-{
-        enum { HIST_SIZE = 64 * 1024 };
-        static unsigned long histogram[HIST_SIZE];
-        static unsigned long cdf[HIST_SIZE];
-        unsigned long cdfmax, cdfrange;
-        mfloat_t unit;
-        mfloat_t min = *pmin;
-        int i;
-
-        unit = (max - min) / (mfloat_t)HIST_SIZE;
-
-        for (i = 0; i < size; i++) {
-                int hidx;
-                if (buf[i] < 0)
-                        continue;
-                hidx = (int)((buf[i] - min) / unit);
-                if (hidx < 0)
-                        hidx = 0;
-                else if (hidx >= HIST_SIZE)
-                        hidx = HIST_SIZE;
-                histogram[hidx]++;
-        }
-
-        cdfmax = 0;
-        for (i = 0; i < HIST_SIZE; i++) {
-                cdfmax += histogram[i];
-                cdf[i] = cdfmax;
-        }
-        assert(cdfmax != cdf[0]);
-
-        /* Slumpify option */
-        for (i = 0; i < HIST_SIZE; i++) {
-                unsigned long long v = cdf[i];
-                v = (int)((double)cdfmax
-                          * pow((double)v / (double)cdfmax,
-                                gbl.equalize_root));
-                cdf[i] = v;
-        }
-
-        cdfrange = cdfmax - cdf[0];
-        for (i = 0; i < size; i++) {
-                int hidx;
-                if (buf[i] < 0)
-                        continue;
-                hidx = (int)((buf[i] - min) / unit);
-                buf[i] = (mfloat_t)(cdf[hidx] - cdf[0]) * (max-min) / (mfloat_t)cdfrange;
-        }
-
-        /* Return new max/min */
-        max = -1;
-        min = 1e16;
-        for (i = 0; i < size; i++) {
-                if (min > buf[i])
-                        min = buf[i];
-                if (max < buf[i])
-                        max = buf[i];
-        }
-
-        *pmin = min;
-        return max;
-}
-
-static void
-shave_outliers(mfloat_t *buf)
-{
-        mfloat_t mean, sumsq, stddev, sum, stdmin, stdmax, max;
-        int i;
-        int npx = gbl.height * gbl.width;
-
-        for (max = 0.0, sum = 0.0, i = 0; i < npx; i++) {
-                sum += buf[i];
-                if (max < buf[i])
-                        max = buf[i];
-        }
-        mean = sum / (mfloat_t)npx;
-        for (sumsq = 0.0, i = 0; i < npx; i++) {
-                mfloat_t diff = buf[i] - mean;
-                sumsq += diff * diff;
-        }
-        /* "n" instead of "n-1", because we have the whole population */
-        stddev = sqrtl(sumsq / (mfloat_t)npx);
-
-        stdmin = mean - gbl.rmout_scale * stddev;
-        stdmax = mean + gbl.rmout_scale * stddev;
-
-        if (stdmin < 0.0)
-                stdmin = 0.0;
-        if (stdmax > max)
-                stdmax = max;
-        assert(stdmax > stdmin);
-
-        for (i = 0; i < npx; i++) {
-                if (buf[i] >= 0.0 && buf[i] < stdmin)
-                        buf[i] = stdmin;
-                else if (buf[i] > stdmax)
-                        buf[i] = stdmax;
-        }
-}
-#endif  /* 0 */
-
 #if EGFRACTAL_MULTITHREADED
 
 /* XXX Place up at top of file */
@@ -378,19 +275,6 @@ mandelbrot(Pxbuf *pxbuf)
         mbrot_get_data(tbuf, &min, &max, gbl.nthread);
 
         printf("min: %Lg max: %Lg\n", (long double)min, (long double)max);
-#if 0
-        if (gbl.rmout)
-                shave_outliers(tbuf);
-#endif
-#if 0
-        if (gbl.have_equalize) {
-                max = mbrot_eq(tbuf, gbl.height * gbl.width, &min, max);
-                max -= min;
-                min = 0;
-                printf("min: %Lg max: %Lg (after EQ)\n",
-                       (long double)min, (long double)max);
-        }
-#endif
         ptbuf = tbuf;
         for (row = 0; row < gbl.height; row++) {
                 for (col = 0; col < gbl.width; col++) {
