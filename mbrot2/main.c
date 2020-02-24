@@ -328,7 +328,6 @@ main(int argc, char **argv)
 
         if (optflags.print_palette) {
                 print_palette_to_bmp(pxbuf);
-                pxbuf_negate(pxbuf);
         } else {
 
                 if (gbl.rmout) {
