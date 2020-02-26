@@ -32,6 +32,41 @@
  */
 #include "complex_helpers.h"
 
+/*
+ * TODO: Add some strange functions that were discovered while
+ * debugging some of these.
+ *
+ * 1.  A happy accident when incorrectly writing sinhcosh():
+ *
+ *      static const double EINV = 0.3678794412;
+ *      ex = exp(-x);
+ *      *s = (1.0 - ex * EINV) / (2.0 * ex);
+ *      *c = (1.0 + ex * EINV) / (2.0 * ex);
+ *
+ * 2.  Another incorrect sinhcosh(), where I got rh and lh mixed up:
+ *
+ *      mfloat_t ex = exp(-x);
+ *      mfloat_t rh = 1.0 / (2.0 * ex);
+ *      mfloat_t lh = ex / 2.0;
+ *      *s = lh - rh;
+ *      *c = lh + rh;
+ *
+ */
+
+/*
+ * This has been tested to agree with glibc's sinh() and cosh()
+ * functions to within a billionth of a percent for x in range
+ * of [-22:22).  Any further algebraic reduction has been tested
+ * on my PC to not make any difference in speed.
+ */
+static inline __attribute__((always_inline)) void
+sinhcosh(mfloat_t x, mfloat_t *s, mfloat_t *c)
+{
+        mfloat_t ex = exp(-x);
+        *s = (1.0 - ex * ex) / (2.0 * ex);
+        *c = (1.0 + ex * ex) / (2.0 * ex);
+}
+
 /* return sin(c) */
 complex_t
 complex_sin(complex_t c)
@@ -42,15 +77,9 @@ complex_sin(complex_t c)
         /*
          * ret.re = sin(c.re) * cosh(c.im);
          * ret.im = cos(c.re) * sinh(c.im);
-         *
-         * We can speed this up ever so slightly, because
-         * exp() is faster than sinh(), and we know that
-         *      sinh(x) = e^x - cosh(x)
          */
-        imcosh = cosh(c.im);
-        imsinh = exp(c.im) - imcosh;
+        sinhcosh(c.im, &imsinh, &imcosh);
 
-        /* TODO: is sqrt(1 - ret.re * ret.re) faster? */
         ret.re = sin(c.re) * imcosh;
         ret.im = cos(c.re) * imsinh;
         return ret;
@@ -66,13 +95,8 @@ complex_cos(complex_t c)
         /*
          * ret.re = cos(c.re) * cosh(c.im);
          * ret.im = sin(c.re) * sinh(c.im);
-         *
-         * We can speed this up ever so slightly, because
-         * exp() is faster than sinh(), and we know that
-         *      sinh(x) = e^x - cosh(x)
          */
-        imcosh = cosh(c.im);
-        imsinh = exp(c.im) - imcosh;
+        sinhcosh(c.im, &imsinh, &imcosh);
 
         /*
          * XXX REVISIT: You'd think sincos() is faster,
@@ -88,6 +112,7 @@ complex_cos(complex_t c)
         ret.im = sin(c.re) * imsinh;
         return ret;
 }
+
 
 /* return 1.0 / c */
 complex_t
