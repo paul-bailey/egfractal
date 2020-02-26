@@ -56,8 +56,12 @@
 /*
  * This has been tested to agree with glibc's sinh() and cosh()
  * functions to within a billionth of a percent for x in range
- * of [-22:22).  Any further algebraic reduction has been tested
- * on my PC to not make any difference in speed.
+ * of [-22:22).  Beyond that we've either hit our bailout radius,
+ * or will converge very soon, since exp(22) == big damn number
+ * and exp(-22) == basically zero.
+ *
+ * Any further algebraic reduction has been tested on my PC to
+ * not make any difference in speed.
  */
 static inline __attribute__((always_inline)) void
 sinhcosh(mfloat_t x, mfloat_t *s, mfloat_t *c)

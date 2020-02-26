@@ -43,20 +43,16 @@ static int height = 8192;
 static Pxbuf *pxbuf = NULL;
 
 static void
-draw_square(int rowstart, int colstart, int size, int color)
+draw_square(int rowstart, int colstart, int size, struct pixel_t *px)
 {
-	int col, row, colend = colstart + size, rowend = rowstart + size;
+	int col, row;
+        int colend = colstart + size;
+        int rowend = rowstart + size;
 	for (row = rowstart; row < rowend; row++) {
 		for (col = colstart; col < colend; col++) {
-			pxbuf_fill_pixel(pxbuf, row, col, TO_RGB(color, color, color));
+			pxbuf_set_pixel(pxbuf, px, row, col);
 		}
 	}
-}
-
-static inline int
-tocolor(int depth)
-{
-	return (depth * 256) / N;
 }
 
 static void
@@ -69,13 +65,15 @@ oom(void)
 static void
 koch_square(int depth, int rowstart, int colstart, int size)
 {
+        struct pixel_t px;
 	if (depth == N || size == 0)
 		return;
+        px.x[0] = px.x[1] = px.x[2] = (float)depth;
 
 	size /= 2;
-	draw_square(rowstart, colstart + size / 2, size, tocolor(depth));
-	draw_square(rowstart + size, colstart, size, tocolor(depth));
-	draw_square(rowstart + size, colstart + size, size, tocolor(depth));
+	draw_square(rowstart, colstart + size / 2, size, &px);
+	draw_square(rowstart + size, colstart, size, &px);
+	draw_square(rowstart + size, colstart + size, size, &px);
 	koch_square(depth + 1, rowstart, colstart + size / 2, size);
 	koch_square(depth + 1, rowstart + size, colstart, size);
 	koch_square(depth + 1, rowstart + size, colstart + size, size);
@@ -84,7 +82,7 @@ koch_square(int depth, int rowstart, int colstart, int size)
 int main(void)
 {
 	FILE *fp;
-	pxbuf = pxbuf_create(width, height, COLOR_BLACK);
+	pxbuf = pxbuf_create(width, height);
 	if (!pxbuf)
 		oom();
 	koch_square(0, 0, 0, width);
@@ -93,8 +91,8 @@ int main(void)
 		fprintf(stderr, "Cannot open output file\n");
 		return 1;
 	}
-	pxbuf_print(pxbuf, fp);
+	pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_SCALE);
 	fclose(fp);
-	pxbuf_free(pxbuf);
+	pxbuf_destroy(pxbuf);
 	return 0;
 }

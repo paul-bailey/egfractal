@@ -239,21 +239,22 @@ static void draw_one_line_r(struct line_t *line, int depth);
 static void
 draw_one_line_r(struct line_t *line, int depth)
 {
+        struct line_t t;
+        struct pixel_t px = { .x = { 1.0, 1.0, 1.0 } };
+
         if (depth == 0)
                 return;
 
-        struct line_t t;
         memcpy(&t, line, sizeof(t));
 
         /*
          * We can make this easy, since we know these are
          * always either horizontal or vertical.
          */
-        unsigned int color = COLOR_WHITE;
         if (line->stop.x == line->start.x) {
                 int row;
                 for (row = line->start.y; row < line->stop.y; row++) {
-                        pxbuf_fill_pixel(pxbuf, row, line->start.x, color);
+                        pxbuf_set_pixel(pxbuf, &px, row, line->start.x);
                 }
 
                 t.start.x = line->start.x-1;
@@ -266,7 +267,7 @@ draw_one_line_r(struct line_t *line, int depth)
         } else {
                 int col;
                 for (col = line->start.x; col < line->stop.x; col++) {
-                        pxbuf_fill_pixel(pxbuf, line->start.y, col, color);
+                        pxbuf_set_pixel(pxbuf, &px, line->start.y, col);
                 }
 
                 t.start.y = line->start.y-1;
@@ -286,7 +287,8 @@ draw_lines(struct line_t *start)
         for (tail = start; tail != NULL; tail = tail->next) {
                 if (0) {
                         printf("Drawing line from (%d, %d) to (%d, %d)\n",
-                               tail->start.x, tail->start.y, tail->stop.x, tail->stop.y);
+                               tail->start.x, tail->start.y,
+                               tail->stop.x, tail->stop.y);
                 }
                 draw_one_line_r(tail, LINE_WIDTH / 2);
         }
@@ -340,7 +342,7 @@ dragon(void)
 int main(void)
 {
 	FILE *fp;
-	pxbuf = pxbuf_create(width, height, COLOR_BLACK);
+	pxbuf = pxbuf_create(width, height);
 	if (!pxbuf)
 		oom();
 	dragon();
@@ -349,9 +351,9 @@ int main(void)
 		fprintf(stderr, "Cannot open output file\n");
 		return 1;
 	}
-	pxbuf_print(pxbuf, fp);
+	pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_SCALE);
 	fclose(fp);
-	pxbuf_free(pxbuf);
+	pxbuf_destroy(pxbuf);
 	return 0;
 }
 
