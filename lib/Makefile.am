@@ -4,4 +4,4 @@ libfractal_a_SOURCES = \
  complex.c \
  formulas.c \
  convolve.c
-libfractal_a_CPPFLAGS = -I$(top_srcdir)/include -Wall
+libfractal_a_CPPFLAGS = -I$(top_srcdir)/include -Wall -O3
