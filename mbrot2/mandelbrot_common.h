@@ -74,12 +74,16 @@ extern struct gbl_t {
         mfloat_t log_d;
         mfloat_t equalize_root;
         mfloat_t rmout_scale;
+        double redspread;
+        double greenspread;
+        double bluespread;
         unsigned int min_iteration;
         bool fit;
         bool distance_est;
         bool verbose;
         bool negate;
         bool color_distance;
+        bool color_spread;
         bool have_equalize;
         bool rmout;
         bool linked;

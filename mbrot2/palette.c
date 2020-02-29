@@ -314,13 +314,46 @@ distance_to_color_palette(mfloat_t dist, mfloat_t min,
 }
 
 static void
+distance_to_color_spread(mfloat_t dist, mfloat_t min,
+                        mfloat_t max, struct pixel_t *px)
+{
+        double d;
+        if (inside_color == NULL) {
+                gbl.palette = 3;
+                initialize_palette();
+        }
+
+        if (dist < 0.0) {
+                memcpy(px, inside_color, sizeof(*px));
+                return;
+        }
+
+        d = pow((dist-min) / (max-min), gbl.distance_root);
+
+        /*
+         * "1.0 -..." to make it brighter the nearer it reaches
+         * the set and darker the further away it gets.
+         *
+         * XXX: Faster if we save the inverse of gbl.xxxspread
+         * at argparse time.
+         */
+        px->x[0] = d > gbl.bluespread ? 0.0 : 1.0 - d / gbl.bluespread;
+        px->x[1] = d > gbl.greenspread ? 0.0 : 1.0 - d / gbl.greenspread;
+        px->x[2] = d > gbl.redspread ? 0.0 : 1.0 - d / gbl.redspread;
+}
+
+static void
 distance_to_color(mfloat_t dist, mfloat_t min,
                         mfloat_t max, struct pixel_t *px)
 {
-        if (gbl.color_distance)
-                distance_to_color_palette(dist, min, max, px);
-        else
+        if (gbl.color_distance) {
+                if (gbl.color_spread)
+                        distance_to_color_spread(dist, min, max, px);
+                else
+                        distance_to_color_palette(dist, min, max, px);
+        } else {
                 distance_to_color_bw(dist, min, max, px);
+        }
 }
 
 /*

@@ -41,6 +41,32 @@ bad_arg(const char *type, const char *optarg)
         exit(EXIT_FAILURE);
 }
 
+static int
+parse_spread(const char *arg)
+{
+        char *endptr;
+        double r, g, b;
+
+        r = strtod(arg, &endptr);
+        if (endptr == arg || !isfinite(r) || r < 0.0 || *endptr != ':')
+                return -1;
+
+        ++endptr;
+        g = strtod(endptr, &endptr);
+        if (endptr == arg || !isfinite(g) || g < 0.0 || *endptr != ':')
+                return -1;
+
+        ++endptr;
+        b = strtod(endptr, &endptr);
+        if (endptr == arg || !isfinite(b) || b < 0.0 || *endptr != '\0')
+                return -1;
+
+        gbl.bluespread  = b;
+        gbl.redspread   = r;
+        gbl.greenspread = g;
+        return 0;
+}
+
 void
 parse_args(int argc, char **argv, struct optflags_t *optflags)
 {
@@ -53,6 +79,7 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                 { "equalize",       optional_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
                 { "nthread",        required_argument, NULL, 7 },
+                { "spread",         optional_argument, NULL, 8 },
                 { "fit",            no_argument,       NULL, 'f' },
                 { "linked",         no_argument,       NULL, 'l' },
                 { "verbose",        no_argument,       NULL, 'v' },
@@ -69,7 +96,8 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
         for (;;) {
                 char *endptr;
                 int option_index = 0;
-                int opt = getopt_long(argc, argv, optstr, long_options, &option_index);
+                int opt = getopt_long(argc, argv, optstr,
+                                      long_options, &option_index);
                 if (opt == -1)
                         break;
 
@@ -119,6 +147,15 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         if (gbl.nthread > 20) {
                                 fprintf(stderr, "%d threads! You cray!\n",
                                         gbl.nthread);
+                        }
+                        break;
+                case 8:
+                        gbl.color_spread = true;
+                        /* Above implies these two things */
+                        gbl.color_distance = true;
+                        gbl.distance_est = true;
+                        if (optarg && parse_spread(optarg) < 0) {
+                                bad_arg("--spread", optarg);
                         }
                         break;
                 case 'D':

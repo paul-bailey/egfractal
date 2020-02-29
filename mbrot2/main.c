@@ -58,6 +58,7 @@ struct gbl_t gbl = {
         .verbose        = false,
         .color_distance = false,
         .fit            = false,
+        .color_spread   = false,
         .distance_root  = 0.25,
         .negate         = false,
         .linked         = false,
@@ -65,6 +66,9 @@ struct gbl_t gbl = {
         .log_d          = 0.0,
         .rmout          = false,
         .rmout_scale    = 3.0,
+        .redspread      = 1.0,
+        .greenspread    = 1.0,
+        .bluespread     = 1.0,
 };
 
 static void
