@@ -41,6 +41,85 @@ bad_arg(const char *type, const char *optarg)
         exit(EXIT_FAILURE);
 }
 
+/* Don't require _GNU_SOURCE */
+static char *
+local_strchrnul(const char *haystack, int needle)
+{
+        while (*haystack && *haystack != needle)
+                ++haystack;
+        return (char *)haystack;
+}
+
+static int
+parse_norm_helper(const char *s, char *endptr)
+{
+        static const struct norm_lut_t {
+                const char *name;
+                enum pxbuf_norm_t method;
+        } NORM_LUT[] = {
+                { "rmout",      PXBUF_NORM_CROP, },
+                { "eq",         PXBUF_NORM_EQ, },
+                { "scale",      PXBUF_NORM_SCALE },
+                { "clip",       PXBUF_NORM_CLIP },
+                { "fit",        PXBUF_NORM_FIT },
+                { NULL,         -1 },
+        };
+        const struct norm_lut_t *t;
+        for (t = NORM_LUT; t->name != NULL; t++) {
+                char *ep2;
+
+                ep2 = (char *)local_strchrnul(s, '=');
+                if (ep2 > endptr)
+                        ep2 = endptr;
+                if (!strncmp(t->name, s, ep2 - s)) {
+                        int idx = gbl.nnorm++;
+                        gbl.norm_method[idx] = t->method;
+                        switch (*ep2) {
+                        case '=':
+                                s = ep2 + 1;
+                                gbl.norm_scale[idx] = strtod(s, &ep2);
+                                if (ep2 == s)
+                                        bad_arg("-N or --norm", s);
+                                break;
+                        case ',':
+                        case '\0':
+                                gbl.norm_scale[idx] =
+                                        t->method == PXBUF_NORM_CROP
+                                        ? 3.0 : 1.0;
+                                break;
+                        default:
+                                bad_arg("-N or --norm", s);
+                        }
+                        /* We found it, so move on */
+                        break;
+                }
+        }
+        return t->name ? 0 : -1;
+}
+
+static int
+parse_norm(const char *arg)
+{
+        const char *s = arg;
+        do {
+                char *endptr;
+
+                if (gbl.nnorm >= MAX_NORM_METHODS) {
+                        fprintf(stderr, "Sorry, too many --norm options");
+                        exit(EXIT_FAILURE);
+                }
+
+                endptr = local_strchrnul(s, ',');
+                if (parse_norm_helper(s, endptr) < 0)
+                        return -1;
+
+                s = endptr;
+                if (*s)
+                        ++s;
+        } while (*s != '\0');
+        return 0;
+}
+
 static int
 parse_spread(const char *arg)
 {
@@ -72,26 +151,24 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
 {
         static const struct option long_options[] = {
                 { "print-palette",  no_argument,       NULL, 0 },
-                { "distance",       optional_argument, NULL, 'D' },
                 { "negate",         no_argument,       NULL, 2 },
 		{ "formula",        required_argument, NULL, 3 },
                 { "color-distance", no_argument,       NULL, 4 },
-                { "equalize",       optional_argument, NULL, 5 },
-                { "rmout",          optional_argument, NULL, 6 },
                 { "nthread",        required_argument, NULL, 7 },
                 { "spread",         optional_argument, NULL, 8 },
-                { "fit",            no_argument,       NULL, 'f' },
-                { "linked",         no_argument,       NULL, 'l' },
-                { "verbose",        no_argument,       NULL, 'v' },
+                { "distance",       optional_argument, NULL, 'D' },
+                { "norm",           required_argument, NULL, 'N' },
                 { "bailout",        required_argument, NULL, 'b' },
                 { "smooth-option",  required_argument, NULL, 'd' },
+                { "linked",         no_argument,       NULL, 'l' },
+                { "verbose",        no_argument,       NULL, 'v' },
                 { "x-offs",         required_argument, NULL, 'x' },
                 { "y-offs",         required_argument, NULL, 'y' },
                 { "zoom-pct",       required_argument, NULL, 'z' },
                 { "help",           no_argument,       NULL, '?' },
                 { NULL,             0,                 NULL, 0 },
         };
-        static const char *optstr = "Db:d:h:lfn:o:p:vw:x:y:z:?";
+        static const char *optstr = "DN:b:d:h:ln:o:p:vw:x:y:z:?";
 
         for (;;) {
                 char *endptr;
@@ -120,24 +197,6 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                     }
                 case 4:
                         gbl.color_distance = true;
-                        break;
-                case 5:
-                        gbl.have_equalize = true;
-                        if (optarg) {
-                                gbl.equalize_root = strtold(optarg, &endptr);
-                                if (endptr == optarg)
-                                        bad_arg("--equalize", optarg);
-                        } else {
-                                gbl.equalize_root = 5.0;
-                        }
-                        break;
-                case 6:
-                        gbl.rmout = true;
-                        if (optarg != NULL) {
-                                gbl.rmout_scale = strtod(optarg, &endptr);
-                                if (endptr == optarg)
-                                        bad_arg("--rmout", optarg);
-                        }
                         break;
                 case 7:
                         gbl.nthread = strtoul(optarg, &endptr, 0);
@@ -173,6 +232,10 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                                 bad_arg("-b (bailout radius)", optarg);
                         gbl.bailoutsqu = gbl.bailout * gbl.bailout;
                         break;
+                case 'N':
+                        if (parse_norm(optarg) < 0)
+                                bad_arg("-N or --norm", optarg);
+                        break;
                 case 'd':
                         gbl.dither = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
@@ -182,9 +245,6 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         gbl.height = strtoul(optarg, &endptr, 0);
                         if (endptr == optarg)
                                 bad_arg("-h (pixel-height", optarg);
-                        break;
-                case 'f':
-                        gbl.fit = true;
                         break;
                 case 'l':
                         gbl.linked = true;
@@ -231,6 +291,13 @@ parse_args(int argc, char **argv, struct optflags_t *optflags)
                         fprintf(stderr, "Unknown option -%c\n", opt);
                         exit(EXIT_FAILURE);
                 }
+        }
+
+        if (gbl.nnorm == 0) {
+                /* At least use the default normalization method */
+                gbl.nnorm = 1;
+                gbl.norm_method[0] = PXBUF_NORM_SCALE;
+                gbl.norm_scale[0] = 1.0;
         }
 
         if (!EGFRACTAL_MULTITHREADED)

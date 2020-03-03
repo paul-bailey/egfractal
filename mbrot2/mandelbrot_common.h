@@ -39,23 +39,8 @@
 # define EGFRACTAL_MULTITHREADED 0
 #endif
 
-#if 0
-enum {
-        /* common color enumerations */
-        COLOR_RED       = 0xff0000u,
-        COLOR_GREEN     = 0x00ff00u,
-        COLOR_BLUE      = 0x0000ffu,
-        COLOR_CYAN      = 0x00ffffu,
-        COLOR_MAGENTA   = 0xff00ffu,
-        COLOR_YELLOW    = 0xffff00u,
-        COLOR_WHITE     = 0xffffffu,
-        COLOR_BLACK     = 0,
-
-        /* Non-standard colors I rather like */
-        COLOR_AMBER     = 0xe7b210u,
-};
-#endif
-#define TO_RGB(r_, g_, b_)  (((r_) << 16) | ((g_) << 8) | (b_))
+/* more than we need */
+enum { MAX_NORM_METHODS = 20 };
 
 /* main.c */
 extern struct gbl_t {
@@ -72,21 +57,19 @@ extern struct gbl_t {
         mfloat_t bailoutsqu;
         mfloat_t distance_root;
         mfloat_t log_d;
-        mfloat_t equalize_root;
-        mfloat_t rmout_scale;
+        mfloat_t norm_scale[MAX_NORM_METHODS];
         double redspread;
         double greenspread;
         double bluespread;
         unsigned int min_iteration;
-        bool fit;
         bool distance_est;
         bool verbose;
         bool negate;
         bool color_distance;
         bool color_spread;
-        bool have_equalize;
-        bool rmout;
         bool linked;
+        enum pxbuf_norm_t norm_method[MAX_NORM_METHODS];
+        int nnorm;
         complex_t (*formula)(complex_t, complex_t);
         complex_t (*dformula)(complex_t, complex_t);
 } gbl;

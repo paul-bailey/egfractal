@@ -57,18 +57,16 @@ struct gbl_t gbl = {
         .distance_est   = false,
         .verbose        = false,
         .color_distance = false,
-        .fit            = false,
         .color_spread   = false,
         .distance_root  = 0.25,
         .negate         = false,
         .linked         = false,
         .formula        = NULL,
         .log_d          = 0.0,
-        .rmout          = false,
-        .rmout_scale    = 3.0,
         .redspread      = 1.0,
         .greenspread    = 1.0,
         .bluespread     = 1.0,
+        .nnorm = 0,
 };
 
 static void
@@ -305,7 +303,6 @@ main(int argc, char **argv)
         };
         Pxbuf *pxbuf;
         FILE *fp;
-        int method;
 
         /* need to set these "consts" first */
         gbl.log_d = logl(2.0L);
@@ -333,21 +330,11 @@ main(int argc, char **argv)
         if (optflags.print_palette) {
                 print_palette_to_bmp(pxbuf);
         } else {
-
-                if (gbl.rmout) {
-                        method = PXBUF_NORM_CROP;
-                } else if (gbl.have_equalize) {
-                        method = PXBUF_NORM_EQ;
-                } else if (gbl.distance_est) {
-                        method = PXBUF_NORM_SCALE;
-                } else {
-                        method = PXBUF_NORM_CLIP;
+                int i;
+                for (i = 0; i < gbl.nnorm; i++) {
+                        pxbuf_normalize(pxbuf, gbl.norm_method[i],
+                                gbl.norm_scale[i], gbl.linked);
                 }
-                pxbuf_normalize(pxbuf, method,
-                                gbl.rmout_scale, gbl.linked);
-
-                if (gbl.fit)
-                        pxbuf_normalize(pxbuf, PXBUF_NORM_FIT, 0., gbl.linked);
                 if (gbl.negate)
                         pxbuf_negate(pxbuf);
         }

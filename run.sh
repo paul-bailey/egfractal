@@ -71,7 +71,7 @@ common_args="${size_opt} ${verbose}"
 # this dramatically changes the palette for these images.  Go
 # back and cherry-pick which between the two sets are better.
 if true; then
-    mbrot="./mbrot2/mbrot2 ${common_args} --rmout --fit --linked -o ${outdir}/mandelbrot"
+    mbrot="./mbrot2/mbrot2 ${common_args} -N scale,fit --linked -o ${outdir}/mandelbrot"
     ${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
     ${mbrot}-02.bmp -b32768 -z1.0e-7  -d1 -p2 -x 1.20899252 -y0.2385098 -n1400
     ${mbrot}-03.bmp -b32768 -z5.0e-8  -d1 -p6 -x-0.1550495 -y-0.65059865
