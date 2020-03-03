@@ -27,11 +27,12 @@ The Buddhabrot
 The Buddhabrot is a different way of looking at the Mandelbrot set.  It
 could be thought of as a picture of all the infinitessmally thin paths of
 divergence near the Mandelbrot set (though an academic might could take
-issue with my choice of words).  In another sense this could be thought
+issue with my choice of words, especially since the "path" is not at
+all a continuous line!).  In another sense this could be thought
 of as a map of flux, since some areas are more densely passed through
 than others (as if two different but infinitely close points could be
-closer or further - non-discrete math is weird).  Thus the brightness of
-a part of the image is an area of larger density -- more paths pass
+closer or further — non-discrete math is weird).  Thus the brightness of
+a part of the image is an area of larger density — more paths pass
 through those area than pass through the darker parts.
 
 The result is a very nebulous image. It looks like clouds with bursts of
@@ -59,10 +60,7 @@ of the picture represents the density of the "traces" through
 that area, but in the digital world of discrete integer math
 it represents the number of times a "trace" hit that pixel;
 think of it as number of times a "trace" went through a
-*sub*-pixel.  (If the random-number generator (R.N.G.) used
-by Buddhabrot is exclusive enough, then two hits in the same
-pixel do not necessarily mean that the two "traces" are identical
-and will follow the same path all the way through.)
+*sub*-pixel.
 
 There are three such histograms, one for each RGB channel.
 Their counts will be different from each other for the following
@@ -70,13 +68,43 @@ reasons, due to the ability to select a different number of max
 iterations for each channel.  (This way you can make different
 color variations rather than just a monochrome Buddhabrot.)
 
+.. note:
+
+   If the random-number generator (that means "RNG," gamers) used by
+   Buddhabrot is exclusive enough, then two hits in the same pixel do
+   not necessarily mean that the two "traces" are identical, nor will
+   they necessarily follow the same path all the way through.
+
+   Part of this relies on the precision of the complex numbers being
+   used, which is why I'm using ``double`` instead of ``float``.  This
+   makes the precision bottleneck be the return value of ``erand48``
+   rather than the number's storage type.
+
+   You would think that on a modern PC the algorithm would be as fast
+   with doubles as with floats, but it follows that the number of cache
+   misses will double.  At any rate, using ``double`` is demonstrably
+   slower than using ``float``.
+
+   So if speed is more important to you than the ability to keep each
+   ``c`` and its path totally unique, then you may want to change the
+   ``mfloat_t`` typedef in its header in ``include/``.
+
+   **TODO**: Find someone who can haz math and ask them if I am
+   overthinking it.  Maybe a ``float``'s 24-bit mantissa will suffice?
+   It just *feels* wrong, since for large images, billions and billions
+   of complex points are being tested.
+
 Buddhabrot Optimizations
 ------------------------
 
 To get a good-looking Buddhabrot on a large image, you
-need lots of iterations -- enough to clearly define each
-pixel.  If you follow my `advice <How many iterations do
-I need?>`, then a 3000x3000 could go through more than a
+need lots of iterations -- enough to clearly define the
+density of every single pixel -- or else the image
+will look grainy with lots of black dots in the middle
+of otherwise bright areas.
+This number is not something you can really predict,
+but if you follow my `advice <How many iterations do
+I need?>`, then a 3000x3000 image could require more than a
 trillion iterations of the ``z^2+c`` formula!
 
 The fastest optimization is to split up the workload
@@ -131,20 +159,46 @@ How many iterations do I need?
 Naively you may think that this is 256 to the power
 of three times the number of pixels, but don't forget that
 not every pixel will be full-white.  Also, you will have
-some small, disproportionately bright areas -- think like
-the super-bright center of Andromeda.
+some small, disproportionately bright areas (like
+the super-bright center of Andromeda).
 
-On the other hand, many points will be discarded.  If ``c``
-is found to be inside the Mandelbrot set, then every point
-of ``z`` will be ignored.  And even if it isn't, some points
-of ``z`` will be ignored just because they pass outside of
-the image but not the bailout radius.
+On the other hand, a *lot* of the ``z^2+c`` iterations will
+end up being discarded without changing the picture, due to
+things like:
 
-Experimentally, I find that the best value of -p, -r, -g, and -b
-are such that -r plus -g plus -b equal somewhere around five
-or six thousand, and -p is the number of pixels times about 100.
-If you use the -s option, multiply the -p option by three rather
-than increase the number of iterations.
+ * after all those calculations, ``c`` is determined to be
+   inside the Mandelbrot set.
+ * the path has left the picture radius but it has not yet
+   reached the bailout radius.
+ * the ``-m`` option was used.
+
+There's just no good way to predict this, except experimentally.
+
+For a conventional Buddhabrot in all its nebulous glory,
+I find that the best value of -p, -r, -g, and -b
+are such that the -r, -g, and -b options (the number of iterations
+for each channel before bailing out) sum up to about 5000-6000,
+and -p should be set to the number of pixels times about 100.
+If you use the -s (single-channel) option, multiply the -p option
+rather than increase the number of iterations.  Also, since
+black-and-white is effectively an 8-bit color rather than a
+24-bit color (and therefore naturally grainier than RGB),
+you may want to crank -p up even a little more.
+
+Using ``-m`` or using a very low number of iterations on the
+RGB channels
+will dramatically change the look of image you are looking at.
+This may be what you are looking for.
+A low RGB number of iterations will make the image look more
+geometric (and not very fractal-like), while a high RGB with
+also a high ``-m`` option will make the image look more complex
+and seemingly random, but somehow still sharp.  In both cases,
+to get a good image, follow my advice from the previous
+paragraph but scale the ``-p`` option to accommodate for the
+higher ``-m`` or lower ``-b``.  (Keep in mind that using a
+high value of ``-m`` and accordingly a high value of ``-p``
+will result in a lot of thrown-away iterations and therefore
+take a very very very long time to complete.)
 
 
 Other Formulas

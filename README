@@ -20,11 +20,6 @@ I added it to reduce confusion with other software
 with “fractal” in its name;
 it was not intended as some sort of impudent proprietary claim.
 
-**TODO** Change names of ``mandelbrot``, ``buddhabrot1``,
-``mbrot2``, ``julia1``, and ``bbrot2``, to be consistent
-with each other and to not have names that'll liley conflict
-with someone else's programs.
-
 Licensing
 ---------
 
@@ -35,14 +30,15 @@ Portability
 
 I am making this public in the hopes that it may be useful,
 but since it works well enough on my systems
-(Ubuntu 18.04 and Cygwin on Windows 10)
+(Ubuntu 18.04, macOS 10.15, and Cygwin on Windows 10)
 I do not test it much for portability.
 I try to make at least the C code be as generally POSIXive as possible,
-though I do use some Gnu-specifics like ``getopt_long`` and such.
+though I do use some Gnu-specifics like ``getopt_long``,
+``__attribute__``, and such.
 
 You need POSIX threads (``<pthread.h>``) to be supported on your
 system for ``mbrot2`` and  ``bbrot2`` to be multi-threaded.  Otherwise
-they will run on only one CPU.
+they will run on only one CPU and be a *lot* slower.
 
 Optimizations
 -------------
@@ -50,34 +46,34 @@ Optimizations
 ``mbrot2`` and ``bbrot2`` use POSIX threads to split up the
 workload over different parts of the image to render.  By
 default, four threads are created.  To use more or less, use
-the ``--nthread`` option.  I assume that for this to be useful
-you need more *cores* than the number of threads --
-hyperthreading isn't very useful,
-since the only system resource being used is RAM;
-no system calls are being made
-during the big-long-multi-threaded-algorithm part of the programs.
+the ``--nthread`` option.
+RAM is the only system resource used
+during the multi-threaded algorithmic portion of the programs —
+no sytem calls are made —
+so it makes sense to base ``--nthread``
+on the number of *cores* your machine has
+rather than the number of *threads*.
 
 **TODO**: Run an actual physical test of the above statement
 on a hyperthread-able machine and update this README.
 
 ``mbrot2`` splits up the workload by selecting different parts
-of the image to render for different threads.  Since ``bbrot2``
-"traces the path," it splits up the workload by selecting
-different starting points of the image to render for different
-threads.
+of the image to render for different threads (interleaved,
+since it doesn't know in advance which parts of the image
+are more complicated than others).
+Since ``bbrot2`` "traces the path,"
+it splits up the workload by
+simply giving each thread a smaller number
+of random starting points to trace.
 
-This was not written for MSDN.
-Frankly I can’t even figure out
-how to create a new C-language project on MSDN anymore.
-(C++ is *not* C, you meathead!)
-
-.. warning::
+.. note::
 
    If your system supports pthreads but does not actually
-   split the threads between different CPUs, you will
-   probably actually **lose** a little performance, due
-   to the added overhead of context switching.  In such
-   a case, you should explicitly use ``--nthread=1``.
+   split the threads between different CPUs —
+   for example if you are using Cygwin —
+   you will probably actually **lose** a little performance,
+   due to the added overhead of context switching.
+   In such a case, you should explicitly use ``--nthread=1``.
 
 See :doc:`How It Works <how-it-works.txt>` for
 the nerdier details of how it all works.
@@ -85,8 +81,12 @@ the nerdier details of how it all works.
 System Requirements
 -------------------
 
-All you really need is a Unix-like environment and probably the Gnu
-version of libc.
+All you really need is a Unix-like environment and the Gnu
+C compiler, or at least one that supports certain Gnu
+extentions.  (Having the Gnu version of libc and libm might also
+be important, but I don't have a PC sans glibc for trying it out.
+The only non-POSIX function I use that I'm aware of is
+``getopt_long``.)
 
 For best performance, use a machine with enough RAM for the program to
 allocate without having to swap.  How much RAM does the software use?
@@ -101,28 +101,36 @@ hundred megabytes of RAM per thread.
 Building
 --------
 
-To create the ``configure`` script, you first need to run
+If you are getting this from Github, you need to have **autotools**
+and **libtool** installed on your computer, so you can generate the
+``configure`` script.
+
+::
+        $ sudo apt install automake autoconf libtool
+
+(or ``brew install`` or ``yum``-something-or-other…).
+
+When you have those programs installed you can run ``autoreconf``
+to build the ``configure`` script.
 
 ::
 
         $ autoreconf -i
 
-This requires you to have **autotools** and **libtool**
-installed on your computer.
 After that, run the conventional chain of commands:
 
 ::
 
         $ ./configure
         $ make
+        $ make install
 
 Since you are building programs with simple names like ``mbrot2``,
 ``julia1``, etc.,
 which could cause namespace issues with other programs in your path
 that have the same name,
-I do NOT recommend using ``make install``.
-Instead just run the programs in the local directories using specified paths
-on the command line.
+I do NOT recommend using ``make install``,
+unless you have a favorite local prefix, like your ``$HOME`` directory.
 
 :TODO: Rename these programs so this isn’t an issue.
 
