@@ -116,6 +116,12 @@ if true; then
     ${mbrot}-42.bmp -b32768 -x 0.745290 -y 0.1103075 -z1.5e-4 --distance=4 --color-distance -p2 --negate
     ${mbrot}-43.bmp -b32768 -x 1.250660 -y 0.0201200 -z1.7e-4 --distance=4 --color-distance -p2 --negate
     ${mbrot}-44.bmp -b32768 -x 0.748000 -y-0.1000000 -z0.0014 --distance=4 --color-distance -p2 --negate
+    ${mbrot}-45.bmp -b32768 --formula cos -x 1.8275 -y 1.9792105 -z1.0e-7 -n3000 -p6 --spread=0.1:0.08:0.07
+    ${mbrot}-46.bmp -b32768 --formula poly5 -x-0.00513 -y 0.00047 -z2.0e-5 \
+            -n800 --spread=.5:.2:.4
+    ${mbrot}-47.bmp -b32768 -z1.0e-4 -x 1.2090000 -y0.2385000 \
+            --spread=1:.5:.3
+    ${mbrot}-48.bmp -n2000 -b32768 -z1.0e-3 -x 0.77000000 -y 0.11000000 --spread 1:1:1
 else
     mbrot="./mbrot2/mbrot2 ${common_args} --linked -o ${outdir}/mandelbrot"
     ${mbrot}-01.bmp -b32768 -z1.0e-4  -d1 -p1 -x 1.2090000 -y0.2385000
