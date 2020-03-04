@@ -123,8 +123,20 @@ iterate_distance(complex_t c, struct thread_info_t *ti)
                                 break;
                 }
         }
+        /*
+         * NOTE: A bug existed for a long time
+         * where this last check was not included,
+         * making for some technically wrong-but-
+         * very-interesting images wherein a part of
+         * the Mandelbrot was being treated as outside
+         * of it with way-off distance measurements.
+         * It may be worthwhile to add a --inject-bug
+         * option for this purpose alone.
+         */
+        if (i == n)
+                return INSIDE;
         zmod = complex_modulus(z);
-        return zmod * logl(zmod) / complex_modulus(dz);
+        return zmod * log(zmod) / complex_modulus(dz);
 }
 
 #if OLD_XY_TO_COMPLEX
