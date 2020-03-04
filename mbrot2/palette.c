@@ -250,6 +250,12 @@ initialize_palette(void)
         palette = palette_buffers[p];
 }
 
+static double
+scaled_distance(double d, double max, double min)
+{
+        return pow((d-min) / (max-min), gbl.distance_root);
+}
+
 /*
  * Return black-and-white gradient.
  * Works best when bailout radius and number of iterations are high.
@@ -273,7 +279,7 @@ distance_to_color_bw(mfloat_t dist, mfloat_t min,
         }
 
         assert(dist <= max && dist >= min && max >= min);
-        magn = (256.0 * pow((dist-min) / (max-min), gbl.distance_root));
+        magn = (256.0 * scaled_distance(dist, max, min));
         px->x[0] = magn;
         px->x[1] = magn;
         px->x[2] = magn;
@@ -300,8 +306,7 @@ distance_to_color_palette(mfloat_t dist, mfloat_t min,
         assert(max > min);
         assert(dist >= min);
 
-        d = powl((dist-min) / (max-min), gbl.distance_root)
-                * (mfloat_t)NCOLOR;
+        d = scaled_distance(dist, max, min) * (mfloat_t)NCOLOR;
         assert(isfinite(d));
         assert(d >= 0.0L);
         i = (int)d;
@@ -328,7 +333,7 @@ distance_to_color_spread(mfloat_t dist, mfloat_t min,
                 return;
         }
 
-        d = pow((dist-min) / (max-min), gbl.distance_root);
+        d = scaled_distance(dist, max, min);
 
         /*
          * "1.0 -..." to make it brighter the nearer it reaches
