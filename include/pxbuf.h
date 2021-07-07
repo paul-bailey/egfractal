@@ -69,6 +69,8 @@ extern int pxbuf_rotate(Pxbuf *pxbuf, bool cw);
 extern void pxbuf_negate(Pxbuf *pxbuf);
 extern void pxbuf_overlay(Pxbuf *dst, Pxbuf *src, double ratio);
 
+extern void pxbuf_get_dimensions(Pxbuf *pxbuf, int *width, int *height);
+
 #if DBG_PXBUF
 extern bool pxbuf_check_finite(Pxbuf *pxbuf);
 #endif

@@ -156,6 +156,7 @@ struct params_t {
         bool rmout;
         bool linked;
         complex_t (*formula)(complex_t, complex_t);
+        const char *overlay;
 };
 
 /* Error helpers */
@@ -426,6 +427,7 @@ parse_args(int argc, char **argv, struct params_t *params)
                 { "formula",        required_argument, NULL, 5 },
                 { "rmout",          optional_argument, NULL, 6 },
                 { "nthread",        required_argument, NULL, 7 },
+                { "overlay",        required_argument, NULL, 8 },
                 { "linked",         no_argument,       NULL, 'l' },
                 { "verbose",        no_argument,       NULL, 'v' },
                 { "bailout",        required_argument, NULL, 'b' },
@@ -459,6 +461,7 @@ parse_args(int argc, char **argv, struct params_t *params)
         params->rmout_scale = 3.0;
         params->rmout      = false;
         params->eq_exp     = 5.0;
+        params->overlay    = NULL;
 
         for (;;) {
                 char *endptr;
@@ -520,6 +523,9 @@ parse_args(int argc, char **argv, struct params_t *params)
                                 fprintf(stderr, "%d threads! You cray!\n",
                                         params->nthread);
                         }
+                        break;
+                case 8:
+                        params->overlay = optarg;
                         break;
                 case 'B':
                         params->bailout = strtold(optarg, &endptr);
@@ -606,15 +612,67 @@ parse_args(int argc, char **argv, struct params_t *params)
         return outfile;
 }
 
+static void
+normalize(Pxbuf *pxbuf, struct params_t *params)
+{
+        enum pxbuf_norm_t method;
+        if (params->rmout) {
+                method = PXBUF_NORM_CROP;
+        } else if (params->do_hist) {
+                method = PXBUF_NORM_EQ;
+        } else {
+                method = PXBUF_NORM_SCALE;
+        }
+
+        pxbuf_normalize(pxbuf, method,
+                        params->rmout_scale, params->linked);
+}
+
 int
 main(int argc, char **argv)
 {
         struct params_t params;
         FILE *fp;
-        enum pxbuf_norm_t method;
         const char *outfile = parse_args(argc, argv, &params);
+        Pxbuf *pxbuf, *p2 = NULL;
+        double overlay_ratio = 1.0;
 
-        Pxbuf *pxbuf = pxbuf_create(params.width, params.height);
+        if (params.overlay != NULL) {
+                char *endptr;
+                char *s = strchr(params.overlay, ',');
+                if (s != NULL) {
+                        *s++ = '\0';
+                        overlay_ratio = strtod(s, &endptr);
+                        if (errno || endptr == s) {
+                                perror("Invalid ratio");
+                                return 1;
+                        }
+                }
+                fp = fopen(params.overlay, "rb");
+                if (!fp) {
+                        perror("Cannot open input file");
+                        return 1;
+                }
+                p2 = pxbuf_read_from_bmp(fp);
+                fclose(fp);
+                if (!p2) {
+                        perror("Cannot read input bitmap");
+                        return 1;
+                }
+
+                normalize(p2, &params);
+                if (params.negate)
+                        pxbuf_negate(p2);
+
+                /*
+                 * Overwrite params with overlay's dimensions.
+                 * If a user's trying to be fancy by overlaying
+                 * a dissimilar image, they can use Photoshop.
+                 */
+                pxbuf_get_dimensions(p2, &params.width, &params.height);
+        }
+
+        pxbuf = pxbuf_create(params.width, params.height);
         if (!pxbuf)
                 oom();
 
@@ -626,21 +684,13 @@ main(int argc, char **argv)
                 return 1;
         }
 
-        if (params.rmout) {
-                method = PXBUF_NORM_CROP;
-        } else if (params.do_hist) {
-                method = PXBUF_NORM_EQ;
-        } else {
-                method = PXBUF_NORM_SCALE;
-        }
-
-        pxbuf_normalize(pxbuf, method,
-                         params.rmout_scale, params.linked);
-
+        normalize(pxbuf, &params);
         if (params.negate)
                 pxbuf_negate(pxbuf);
 
         pxbuf_rotate(pxbuf, false);
+        if (p2)
+                pxbuf_overlay(pxbuf, p2, overlay_ratio);
         pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_CLIP);
         fclose(fp);
 

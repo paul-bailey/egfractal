@@ -653,5 +653,13 @@ pxbuf_overlay(Pxbuf *dst, Pxbuf *src, double ratio)
         }
 }
 
+void
+pxbuf_get_dimensions(Pxbuf *pxbuf, int *width, int *height)
+{
+        if (height)
+                *height = pxbuf->height;
+        if (width)
+                *width = pxbuf->width;
+}
 
 
