@@ -1,10 +1,14 @@
 #include "pxbuf.h"
+#include <errno.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 struct pxbuf_t {
         unsigned int height;
@@ -46,6 +50,29 @@ pack16(unsigned char *p, unsigned long v)
         *p++ = v & 0xff;
         return p;
 }
+
+static unsigned long
+unpack16(unsigned char *p)
+{
+        unsigned long ret;
+        ret = p[1];
+        ret <<= 8;
+        return ret + p[0];
+}
+
+static unsigned long
+unpack32(unsigned char *p)
+{
+        unsigned long ret;
+        ret = p[3];
+        ret <<= 8;
+        ret += p[2];
+        ret <<= 8;
+        ret += p[1];
+        ret <<= 8;
+        return ret + p[0];
+}
+
 
 static const float CLIP_MAX = 255.0 / 256.0;
 
@@ -399,6 +426,87 @@ pxbuf_normalize(Pxbuf *pxbuf, enum pxbuf_norm_t method,
         return 0;
 }
 
+Pxbuf *
+pxbuf_read_from_bmp(FILE *fp)
+{
+        struct stat st;
+        unsigned char *buf, *p;
+        size_t nread, offset;
+        long width, height, row, col, padding;
+        Pxbuf *ret;
+
+        if (fstat(fileno(fp), &st) != 0)
+                return NULL;
+        /*
+         * errno might have been set from rewind
+         * if fp is stdin, so ignore it
+         */
+        errno = 0;
+        buf = malloc(st.st_size);
+        if (!buf)
+                return NULL;
+        nread = read(fileno(fp), buf, st.st_size);
+        if (nread != st.st_size)
+                goto err;
+
+        /* Only support Windows-style BMP */
+        if (buf[0] != 'B' || buf[1] != 'M') {
+                fprintf(stderr, "%d%d != BM\n", buf[0], buf[1]);
+                goto err;
+        }
+
+        /*
+         * Sanity-check that the bmp offset doesn't
+         * send us flying off the map.
+         */
+        offset = unpack32(&buf[10]);
+        if (offset > st.st_size)
+                goto err;
+
+        /* Only accept Windows BITMAPINFOHEADER */
+        if (unpack32(&buf[14]) != 40)
+                goto err;
+
+        width = unpack32(&buf[18]);
+        height = unpack32(&buf[22]);
+        if (unpack16(&buf[26]) != 1)
+                goto err;
+        /* Only accept 24-bit color depth */
+        if (unpack16(&buf[28]) != 24)
+                goto err;
+
+        /* Only accept BI_RGB compression */
+        if (unpack32(&buf[30]) != BI_RGB)
+                goto err;
+
+        /* Sanity-check the buffer size */
+        if (((((3 * width) * 4) / 32) * height) > st.st_size)
+                goto err;
+
+        ret = pxbuf_create(width, height);
+        if (!ret)
+                goto err;
+
+        padding = (width * 3) % 4;
+        p = &buf[offset];
+        for (row = 0; row < height; row++) {
+                for (col = 0; col < width; col++) {
+                        struct pixel_t *px;
+                        px = pxbuf_get_pixel(ret, row, col);
+                        /* TODO: is px BGR like BMP, or is it RGB? */
+                        px->x[0] = *p++;
+                        px->x[1] = *p++;
+                        px->x[2] = *p++;
+                }
+                p += padding;
+        }
+        return ret;
+
+err:
+        free(buf);
+        return NULL;
+}
+
 int
 pxbuf_print_to_bmp(Pxbuf *pxbuf, FILE *fp, enum pxbuf_norm_t method)
 {
@@ -442,27 +550,20 @@ pxbuf_print_to_bmp(Pxbuf *pxbuf, FILE *fp, enum pxbuf_norm_t method)
 
         pxbuf_normalize(pxbuf, method, 3.0, PXBUF_ALLCHAN);
         for (row = 0; row < pxbuf->height; row++) {
-                px = &pxbuf->buf[(pxbuf->height - row - 1) * pxbuf->width];
                 for (col = 0; col < pxbuf->width; col++) {
                         unsigned char rgb[3];
+                        px = pxptr(pxbuf, row, col);
                         /* Weird.  BMP orders it BGR instead of RGB */
                         rgb[0] = crop_255((px->x[PXBUF_BLUE] * 256.0 + 0.5));
                         rgb[1] = crop_255((px->x[PXBUF_GREEN] * 256.0 + 0.5));
                         rgb[2] = crop_255((px->x[PXBUF_RED] * 256.0 + 0.5));
 
                         fwrite(rgb, 3, 1, fp);
-                        ++px;
                 }
                 if (padding)
                         fwrite(buffer, 1, padding, fp);
         }
         return 0;
-}
-
-Pxbuf *
-pxbuf_read_from_bmp(Pxbuf *pxbuf, FILE *fp)
-{
-        return NULL;
 }
 
 Pxbuf *
@@ -492,7 +593,7 @@ pxbuf_destroy(Pxbuf *pxbuf)
 }
 
 int
-pxbuf_rotate(Pxbuf *pxbuf)
+pxbuf_rotate(Pxbuf *pxbuf, bool cw)
 {
         Pxbuf tmp;
         int row, col;
@@ -507,12 +608,16 @@ pxbuf_rotate(Pxbuf *pxbuf)
         for (row = 0; row < pxbuf->height; row++) {
                 for (col = 0; col < pxbuf->width; col++) {
                         struct pixel_t *px;
+                        int new_row, new_col;
+                        if (cw) {
+                                new_row = col;
+                                new_col = pxbuf->height - 1 - row;
+                        } else {
+                                new_row = pxbuf->width - 1 - col;
+                                new_col = row;
+                        }
                         px = pxbuf_get_pixel(pxbuf, row, col);
-                        /*
-                         * This is not incorrect.  The swapped
-                         * row and col args are intentional.
-                         */
-                        pxbuf_set_pixel(&tmp, px, col, row);
+                        pxbuf_set_pixel(&tmp, px, new_row, new_col);
                 }
         }
 
@@ -522,6 +627,31 @@ pxbuf_rotate(Pxbuf *pxbuf)
         return 0;
 }
 
+/* Assumes normalization occurs before and after, outside this function */
+void
+pxbuf_overlay(Pxbuf *dst, Pxbuf *src, double ratio)
+{
+        int ymax, xmax, row, col;
+        struct pixel_t *pxsrc, *pxdst;
+
+        /* TODO: Add baseline offsets as args */
+        ymax = dst->height;
+        if (ymax > src->height)
+                ymax = src->height;
+        xmax = dst->width;
+        if (xmax > src->width)
+                xmax = src->width;
+
+        for (row = 0; row < ymax; row++) {
+                for (col = 0; col < xmax; col++) {
+                        int i;
+                        pxsrc = pxbuf_get_pixel(src, row, col);
+                        pxdst = pxbuf_get_pixel(dst, row, col);
+                        for (i = 0; i < 3; i++)
+                                pxdst->x[i] += ratio * pxsrc->x[i];
+                }
+        }
+}
 
 
 

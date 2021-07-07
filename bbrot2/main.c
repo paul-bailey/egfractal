@@ -640,7 +640,7 @@ main(int argc, char **argv)
         if (params.negate)
                 pxbuf_negate(pxbuf);
 
-        pxbuf_rotate(pxbuf);
+        pxbuf_rotate(pxbuf, false);
         pxbuf_print_to_bmp(pxbuf, fp, PXBUF_NORM_CLIP);
         fclose(fp);
 

@@ -61,12 +61,13 @@ int pxbuf_normalize(Pxbuf *pxbuf, enum pxbuf_norm_t method,
                         float deviation, bool linked);
 extern int pxbuf_print_to_bmp(Pxbuf *pxbuf, FILE *fp,
                 enum pxbuf_norm_t method);
-extern Pxbuf *pxbuf_read_from_bmp(Pxbuf *pxbuf, FILE *fp);
+extern Pxbuf *pxbuf_read_from_bmp(FILE *fp);
 
 extern Pxbuf *pxbuf_create(int width, int height);
 extern void pxbuf_destroy(Pxbuf *pxbuf);
-extern int pxbuf_rotate(Pxbuf *pxbuf);
+extern int pxbuf_rotate(Pxbuf *pxbuf, bool cw);
 extern void pxbuf_negate(Pxbuf *pxbuf);
+extern void pxbuf_overlay(Pxbuf *dst, Pxbuf *src, double ratio);
 
 #if DBG_PXBUF
 extern bool pxbuf_check_finite(Pxbuf *pxbuf);
