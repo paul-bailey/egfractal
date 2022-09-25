@@ -106,6 +106,7 @@ and **libtool** installed on your computer, so you can generate the
 ``configure`` script.
 
 ::
+
         $ sudo apt install automake autoconf libtool
 
 (or ``brew install`` or ``yum``-something-or-other…).

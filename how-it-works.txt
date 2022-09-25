@@ -15,6 +15,8 @@ or, The Nerdy Stuff
 The Mandelbrot Set
 ==================
 
+:TODO: This whole section.
+
 The iteration-count algorithm
 -----------------------------
 
@@ -150,6 +152,7 @@ Wanted Optimizations
   of the full thing.  This is because a point could be hit
   by a "trace" that began nowhere near it.
 
+  :TODO: Look up Metropolis-Hastings.  Someone told me that's the method to use.
 
 How many iterations do I need?
 ------------------------------
